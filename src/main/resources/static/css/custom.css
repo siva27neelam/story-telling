@@ -1,0 +1,291 @@
+/* Root Variables - Light Theme */
+:root {
+    --primary-color: #FF6B6B;     /* Cheerful Red */
+    --secondary-color: #4ECDC4;   /* Bright Turquoise */
+    --accent-1: #FFE66D;         /* Sunny Yellow */
+    --accent-2: #95E1D3;         /* Soft Mint */
+    --accent-3: #A6D1E6;         /* Sky Blue */
+    --text-color: #2D3436;       /* Soft Black */
+    --bg-color: #F7F9FC;         /* Light Background */
+    --card-bg: #FFFFFF;          /* White */
+    --success: #7bed9f;          /* Soft Green */
+}
+
+/* Dark Theme Variables */
+[data-theme="dark"] {
+    --primary-color: #FF7B7B;    /* Lighter Red */
+    --secondary-color: #5EDCD4;  /* Brighter Turquoise */
+    --accent-1: #FFF67D;        /* Brighter Yellow */
+    --accent-2: #A5F1E3;        /* Lighter Mint */
+    --text-color: #FFFFFF;      /* White text */
+    --bg-color: #2F3542;        /* Soft Dark Background */
+    --card-bg: #3D4558;         /* Dark Card */
+    --success: #8bed9f;         /* Brighter Green */
+}
+
+/* Base Styles */
+body {
+    background-color: var(--bg-color);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-color);
+    min-height: 100vh;
+    padding-bottom: 100px;
+    transition: background-color 0.3s ease;
+}
+
+/* Container Styles */
+.story-container {
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 800px;
+    position: relative;
+}
+
+/* Headers */
+h2, h4 {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+}
+
+/* Story Pages */
+.story-page {
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    border: 2px solid var(--accent-2);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+/* View Mode Specific */
+.view-mode .story-page {
+    display: none;
+}
+
+.view-mode .story-page.active {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+/* Images */
+.story-image {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    margin: 1rem auto;
+    display: block;
+    border-radius: 10px;
+    border: 2px solid var(--accent-2);
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 2px solid var(--accent-2);
+}
+
+/* Navigation Buttons */
+.navigation-buttons {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--card-bg);
+    padding: 1rem 2rem;
+    border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 2px solid var(--accent-1);
+    z-index: 1000;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 25px;
+    padding: 0.7rem 1.5rem;
+    font-size: 1.1rem;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-success {
+    background-color: var(--success);
+    color: white;
+}
+
+/* Theme Switch Button */
+.theme-switch {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--card-bg);
+    border: 2px solid var(--accent-1);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.theme-switch:hover {
+    transform: rotate(180deg);
+}
+
+/* Form Elements */
+.form-control {
+    background-color: var(--card-bg);
+    border: 2px solid var(--accent-3);
+    border-radius: 10px;
+    padding: 0.8rem;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 107, 0.25);
+    outline: none;
+}
+
+.form-label {
+    color: var(--text-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.page-indicator {
+    background-color: var(--accent-1);     /* Sunny Yellow */
+    padding: 0.5rem 1rem;
+    border-radius: 15px;
+    color: #2D3436;                        /* Dark text for light background */
+    font-weight: bold;
+}
+/* Dark Mode */
+[data-theme="dark"] .page-indicator {
+    background-color: var(--accent-2);     /* Using mint color instead of yellow */
+    color: #2D3436;                        /* Keep dark text for contrast */
+}
+
+
+
+/* Delete Button */
+.delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: var(--primary-color);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    color: #ff4444;
+}
+
+/* Card Styles (Home Page) */
+.card {
+    border-radius: 15px;
+    border: 2px solid var(--accent-1);
+    background-color: var(--card-bg);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary-color);
+}
+
+.card-title {
+    color: var(--text-color);
+    font-size: 1.4rem;
+    font-weight: bold;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Story Text */
+.story-text {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    margin: 1rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navigation-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 1rem;
+        width: 90%;
+    }
+
+    .story-container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+}
+
+/* Success Messages */
+.alert-success {
+    background-color: var(--success);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Current Media Info */
+.current-media-info {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
