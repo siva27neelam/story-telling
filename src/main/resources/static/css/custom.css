@@ -34,6 +34,10 @@ body {
 }
 
 /* Container Styles */
+.container {
+    padding: 0 15px;
+}
+
 .story-container {
     background-color: var(--card-bg);
     border-radius: 15px;
@@ -181,20 +185,14 @@ h2, h4 {
     margin-bottom: 0.5rem;
 }
 
+/* Page Indicator */
 .page-indicator {
-    background-color: var(--accent-1);     /* Sunny Yellow */
+    background-color: var(--accent-2);
     padding: 0.5rem 1rem;
     border-radius: 15px;
-    color: #2D3436;                        /* Dark text for light background */
+    color: #2D3436;
     font-weight: bold;
 }
-/* Dark Mode */
-[data-theme="dark"] .page-indicator {
-    background-color: var(--accent-2);     /* Using mint color instead of yellow */
-    color: #2D3436;                        /* Keep dark text for contrast */
-}
-
-
 
 /* Delete Button */
 .delete-btn {
@@ -246,33 +244,6 @@ h2, h4 {
     to { opacity: 1; }
 }
 
-/* Story Text */
-.story-text {
-    font-size: 1.2rem;
-    line-height: 1.6;
-    margin: 1rem 0;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .navigation-buttons {
-        flex-wrap: wrap;
-        justify-content: center;
-        padding: 1rem;
-        width: 90%;
-    }
-
-    .story-container {
-        margin: 1rem;
-        padding: 1rem;
-    }
-
-    .btn {
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
-    }
-}
-
 /* Success Messages */
 .alert-success {
     background-color: var(--success);
@@ -288,4 +259,107 @@ h2, h4 {
     color: var(--text-color);
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
+}
+
+/* Media Queries for Mobile Responsiveness */
+@media (max-width: 768px) {
+    .story-container {
+        margin: 1rem;
+        padding: 1rem;
+        max-width: 100%;
+    }
+
+    .navigation-buttons {
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        transform: none;
+        border-radius: 0;
+        padding: 0.75rem;
+        justify-content: space-around;
+        border-top: 2px solid var(--accent-1);
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+    }
+
+    .navigation-buttons .btn {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        min-width: auto;
+    }
+
+    .theme-switch {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .story-page {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .story-image {
+        max-height: 300px;
+        margin: 0.5rem auto;
+    }
+
+    .story-text {
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    h2 { font-size: 1.5rem; }
+    h4 { font-size: 1.2rem; }
+
+    body {
+        padding-bottom: 80px;
+    }
+}
+
+/* Small Screen Optimizations */
+@media (max-width: 480px) {
+    .navigation-buttons .btn span {
+        display: none;
+    }
+    .navigation-buttons .btn i {
+        margin: 0;
+    }
+    .page-indicator {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+/* Tablet Adjustments */
+@media (min-width: 481px) and (max-width: 768px) {
+    .navigation-buttons .btn {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+}
+
+/* iPad and Larger Tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .story-container {
+        margin: 2rem auto;
+        max-width: 90%;
+    }
+}
+
+/* Landscape Mode */
+@media (max-height: 500px) and (orientation: landscape) {
+    .navigation-buttons {
+        position: static;
+        margin-top: 1rem;
+        border: 2px solid var(--accent-1);
+        border-radius: 15px;
+    }
+
+    body {
+        padding-bottom: 1rem;
+    }
 }
