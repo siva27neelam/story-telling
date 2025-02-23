@@ -363,16 +363,62 @@ h2, h4 {
         padding-bottom: 1rem;
     }
 }
+/* PIN Modal Styles */
+.modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--accent-2);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--accent-2);
+}
+
+.pin-container{
+    display:flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .pin-input {
     width: 50px;
     height: 50px;
     font-size: 24px;
     text-align: center;
     margin: 0 5px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border: 2px solid var(--accent-3);
 }
-.pin-container {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px 0;
+
+.pin-input:focus {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(var(--primary-color-rgb), 0.25);
+}
+
+/* Dark mode specific adjustments */
+[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="dark"] .pin-input {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--accent-3);
+}
+
+[data-theme="dark"] .pin-input:focus {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--primary-color);
 }
