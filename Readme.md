@@ -1,1 +1,3 @@
-docker run -d cloudflare/cloudflared:latest tunnel --no-autoupdate run --token eyJhIjoiZTk3MDA0OGRiNjg0YjgwZDAzZGViYmNiM2NmNThhODEiLCJ0IjoiNDk2MzdiMzYtZTczOS00YTI1LTk1NWYtM2VlNmQ2MGUyODUzIiwicyI6Ik56azVaR0UwWlRjdE4yWXhZeTAwTURRekxXSmtNR1l0TTJaa05EaGpNREF6TWpVeCJ9
+docker tag story-telling siva27neelam/story-telling
+docker push siva27neelam/story-telling:tagname
+docker run -d -p 8080:8080 siva27neelam/story-telling -name story-telling
