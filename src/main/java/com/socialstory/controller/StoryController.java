@@ -139,4 +139,11 @@ public class StoryController {
         redirectAttributes.addFlashAttribute("message", "Story updated successfully!");
         return "redirect:/stories";
     }
+
+    @GetMapping("/delete/{id}")
+    public String deleteStory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        storyService.deleteStory(id);
+        redirectAttributes.addFlashAttribute("message", "Story deleted successfully!");
+        return "redirect:/stories";
+    }
 }
