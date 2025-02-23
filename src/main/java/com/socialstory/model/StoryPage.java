@@ -1,7 +1,7 @@
 package com.socialstory.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+        import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,11 +15,16 @@ public class StoryPage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+    @Column(columnDefinition = "TEXT")
     private String text;
 
-    private String imageUrl;
-    private String audioUrl;
+    @Lob
+    @Column(name = "image_data", columnDefinition = "LONGBLOB")
+    private byte[] imageData;
+
+    @Column(name = "image_type")
+    private String imageType;
+
     private Integer pageOrder;
 
     @ManyToOne
