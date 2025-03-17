@@ -6,17 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/custom.css}" rel="stylesheet">
+    <!-- Audio libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
 </head>
 <body>
+<!-- Floating Elements -->
+<div class="floating-elements">
+    <div class="floating-element cloud1">☁️</div>
+    <div class="floating-element cloud2">☁️</div>
+    <div class="floating-element star1">⭐</div>
+    <div class="floating-element star2">✨</div>
+    <div class="floating-element cloud3">☁️</div>
+    <div class="floating-element star3">✨</div>
+</div>
+
 <button onclick="toggleTheme()" class="btn theme-switch">
     <i class="fas fa-moon" id="themeIcon"></i>
 </button>
 
 <div class="container mt-5">
-    <div class="stories-header" style="padding-bottom: 15px;">
-            <div class="d-flex justify-content-between align-items-center">
-            <h2 class="m-0">Children's Stories</h2>
+    <div class="stories-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Children's Stories</h2>
             <a href="/stories/create" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Create New Story
             </a>
@@ -44,6 +57,32 @@
     </div>
 </div>
 
+<!-- Fun Footer -->
+<div class="fun-footer">
+    <div class="container">
+        <div class="footer-content">
+            <p>Click to add some magic:</p>
+            <div class="magic-buttons">
+                <button class="magic-btn stars-btn" onclick="createShower('⭐')">
+                    <i class="fas fa-star"></i> Stars
+                </button>
+                <button class="magic-btn hearts-btn" onclick="createShower('❤️')">
+                    <i class="fas fa-heart"></i> Hearts
+                </button>
+                <button class="magic-btn balloons-btn" onclick="createShower('🎈')">
+                    <i class="fas fa-birthday-cake"></i> Balloons
+                </button>
+                <button class="magic-btn rainbow-btn" onclick="createShower('🌈')">
+                    <i class="fas fa-rainbow"></i> Rainbows
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Particle Container -->
+<div id="particle-container"></div>
+
 <script>
     function toggleTheme() {
         const body = document.body;
@@ -60,6 +99,91 @@
         }
     }
 
+    function createShower(emoji) {
+        const container = document.getElementById('particle-container');
+        const count = 20 + Math.floor(Math.random() * 10); // Between 20-30 particles
+
+        // Clear existing particles if there are too many
+        if (container.children.length > 100) {
+            container.innerHTML = '';
+        }
+
+        // Play a fun sound effect
+        const audioEffects = {
+            '⭐': 'twinkle',
+            '❤️': 'pop',
+            '🎈': 'balloon',
+            '🌈': 'magic'
+        };
+
+        playSound(audioEffects[emoji] || 'pop');
+
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.textContent = emoji;
+
+            // Random position from click or center if no event
+            const startX = 40 + Math.random() * (window.innerWidth - 80);
+            const startY = window.innerHeight;
+
+            // Random end position
+            const endX = startX + (Math.random() - 0.5) * 300;
+            const endY = 100 + Math.random() * 400;
+
+            // Random sizes - much larger now
+            const size = 40 + Math.random() * 60;
+
+            // Set styles
+            particle.style.left = startX + 'px';
+            particle.style.top = startY + 'px';
+            particle.style.fontSize = size + 'px';
+
+            // Add to container
+            container.appendChild(particle);
+
+            // Animate upward
+            setTimeout(() => {
+                particle.style.transform = `translate(${endX - startX}px, ${endY - startY}px) rotate(${Math.random() * 360}deg)`;
+                particle.style.opacity = '0';
+            }, 10);
+
+            // Remove after animation completes
+            setTimeout(() => {
+                if (container.contains(particle)) {
+                    container.removeChild(particle);
+                }
+            }, 3000);
+        }
+    }
+
+    function playSound(type) {
+        // Create audio elements with different sounds for each emoji type
+        let soundUrl;
+
+        switch(type) {
+            case 'twinkle':
+                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/success.mp3';
+                break;
+            case 'pop':
+                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
+                break;
+            case 'balloon':
+                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/notification.mp3';
+                break;
+            case 'magic':
+                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/toggle.mp3';
+                break;
+            default:
+                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
+        }
+
+        // Create and play the audio
+        const audio = new Audio(soundUrl);
+        audio.volume = 0.5; // 50% volume
+        audio.play().catch(e => console.log('Audio play failed:', e));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const savedTheme = localStorage.getItem('theme') || 'light';
         const icon = document.getElementById('themeIcon');
@@ -68,6 +192,15 @@
             document.body.setAttribute('data-theme', 'dark');
             icon.classList.replace('fa-moon', 'fa-sun');
         }
+
+        // Add animations to the cards with a slight delay between each
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.animation = 'fadeIn 0.5s forwards';
+            }, index * 100);
+        });
     });
 </script>
 </body>
