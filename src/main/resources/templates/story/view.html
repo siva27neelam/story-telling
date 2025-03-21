@@ -70,7 +70,7 @@
     </a>
 </div>
 
-<!-- Interactive Story Elements Button -->
+<!-- Magic Corner Menu -->
 <div class="magic-corner">
     <button onclick="toggleMagicMenu()" class="btn magic-trigger">
         <i class="fas fa-magic"></i>
@@ -99,6 +99,8 @@
     const totalPages = [[${story.pages.size()}]];
     let speech = null;
     let magicMenuOpen = false;
+    let isSpeaking = false;
+    let speechSynthVoices = [];
 
     function showPage(index) {
         // Create a page turn effect
@@ -178,6 +180,19 @@
         }
     }
 
+    // Initialize speech synthesis
+    function initSpeechSynthesis() {
+        // Get available voices
+        speechSynthVoices = window.speechSynthesis.getVoices();
+
+        // If voices aren't loaded yet, wait for them
+        if (speechSynthVoices.length === 0) {
+            window.speechSynthesis.addEventListener('voiceschanged', () => {
+                speechSynthVoices = window.speechSynthesis.getVoices();
+            });
+        }
+    }
+
     function toggleReadAloud() {
         const readBtn = document.getElementById('readBtn');
         if (speech && window.speechSynthesis.speaking) {
@@ -193,12 +208,92 @@
     }
 
     function startReading(text) {
+        // Stop any current reading
+        window.speechSynthesis.cancel();
+
         speech = new SpeechSynthesisUtterance(text);
+
+        // Configure professional voice
+        speech.rate = 0.9; // Slightly slower for clarity
+        speech.pitch = 1.0; // Natural pitch
+        speech.volume = 1.0; // Full volume
+
+        // Find a suitable voice
+        if (speechSynthVoices.length > 0) {
+            // Try to find an English voice labeled as "Google" which tends to sound more professional
+            let professionalVoice = speechSynthVoices.find(voice =>
+                voice.lang.includes('en') && voice.name.includes('Google'));
+
+            // Fallback to any English voice
+            if (!professionalVoice) {
+                professionalVoice = speechSynthVoices.find(voice => voice.lang.includes('en'));
+            }
+
+            // Use the first available voice if no English voice is found
+            speech.voice = professionalVoice || speechSynthVoices[0];
+        }
+
+        // Speaking events
+        speech.onstart = () => {
+            isSpeaking = true;
+            const readBtn = document.getElementById('readBtn');
+            readBtn.classList.add('playing');
+
+            // Show reading indicator
+            showReadingIndicator();
+        };
+
         speech.onend = () => {
+            isSpeaking = false;
             const readBtn = document.getElementById('readBtn');
             readBtn.classList.remove('playing');
+
+            // Hide reading indicator
+            hideReadingIndicator();
         };
+
+        // Start speaking
         window.speechSynthesis.speak(speech);
+    }
+
+    // Show a subtle reading indicator
+    function showReadingIndicator() {
+        let indicator = document.querySelector('.reading-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'reading-indicator';
+            indicator.innerHTML = `
+                <div class="indicator-icon">🔊</div>
+                <div class="indicator-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            `;
+            document.body.appendChild(indicator);
+        }
+
+        indicator.style.display = 'flex';
+        indicator.style.opacity = '0';
+        indicator.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            indicator.style.opacity = '1';
+            indicator.style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    // Hide reading indicator
+    function hideReadingIndicator() {
+        const indicator = document.querySelector('.reading-indicator');
+        if (indicator) {
+            indicator.style.opacity = '0';
+            indicator.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 300);
+        }
     }
 
     function stopReading() {
@@ -206,6 +301,10 @@
             window.speechSynthesis.cancel();
             const readBtn = document.getElementById('readBtn');
             readBtn.classList.remove('playing');
+            isSpeaking = false;
+
+            // Hide reading indicator
+            hideReadingIndicator();
         }
     }
 
@@ -405,6 +504,9 @@
         setTimeout(() => {
             createTinyShower('✨', 3);
         }, 1000);
+
+        // Initialize speech synthesis
+        initSpeechSynthesis();
     });
 
     // Handle keyboard navigation
