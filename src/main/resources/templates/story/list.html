@@ -41,14 +41,27 @@
     <div class="row">
         <div class="col-md-4 mb-4" th:each="story : ${stories}">
             <div class="card h-100">
+                <!-- Clickable cover image -->
+                <a th:href="@{/stories/view/{id}(id=${story.id})}" class="card-image-link">
+                    <img th:if="${story.coverImage != null}" th:src="@{/stories/cover/{id}(id=${story.id})}"
+                         class="card-img-top story-cover-image" alt="Story cover">
+                    <div th:unless="${story.coverImage != null}" class="placeholder-cover">
+                        <span>📚</span>
+                    </div>
+                </a>
+
                 <div class="card-body">
                     <h5 class="card-title" th:text="${story.title}">Story Title</h5>
-                    <div class="mt-3">
-                        <a th:href="@{/stories/view/{id}(id=${story.id})}" class="btn btn-primary w-100 mb-2">
-                            <i class="fas fa-book-reader"></i> Read Story
-                        </a>
-                        <a th:href="@{/stories/edit/{id}(id=${story.id})}" class="btn btn-secondary w-100">
-                            <i class="fas fa-edit"></i> Edit Story
+
+                    <!-- Tags display -->
+                    <div class="story-tags" th:if="${story.tags != null && !story.tags.isEmpty()}">
+                        <span class="tag" th:each="tag : ${#strings.arraySplit(story.tags, ',')}" th:text="${#strings.trim(tag)}">tag</span>
+                    </div>
+
+                    <!-- Edit button as an icon -->
+                    <div class="edit-link">
+                        <a th:href="@{/stories/edit/{id}(id=${story.id})}" title="Edit Story">
+                            <i class="fas fa-edit"></i>
                         </a>
                     </div>
                 </div>
@@ -83,125 +96,7 @@
 <!-- Particle Container -->
 <div id="particle-container"></div>
 
-<script>
-    function toggleTheme() {
-        const body = document.body;
-        const icon = document.getElementById('themeIcon');
-
-        if (body.getAttribute('data-theme') === 'dark') {
-            body.removeAttribute('data-theme');
-            icon.classList.replace('fa-sun', 'fa-moon');
-            localStorage.setItem('theme', 'light');
-        } else {
-            body.setAttribute('data-theme', 'dark');
-            icon.classList.replace('fa-moon', 'fa-sun');
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    function createShower(emoji) {
-        const container = document.getElementById('particle-container');
-        const count = 20 + Math.floor(Math.random() * 10); // Between 20-30 particles
-
-        // Clear existing particles if there are too many
-        if (container.children.length > 100) {
-            container.innerHTML = '';
-        }
-
-        // Play a fun sound effect
-        const audioEffects = {
-            '⭐': 'twinkle',
-            '❤️': 'pop',
-            '🎈': 'balloon',
-            '🌈': 'magic'
-        };
-
-        playSound(audioEffects[emoji] || 'pop');
-
-        for (let i = 0; i < count; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.textContent = emoji;
-
-            // Random position from click or center if no event
-            const startX = 40 + Math.random() * (window.innerWidth - 80);
-            const startY = window.innerHeight;
-
-            // Random end position
-            const endX = startX + (Math.random() - 0.5) * 300;
-            const endY = 100 + Math.random() * 400;
-
-            // Random sizes - much larger now
-            const size = 40 + Math.random() * 60;
-
-            // Set styles
-            particle.style.left = startX + 'px';
-            particle.style.top = startY + 'px';
-            particle.style.fontSize = size + 'px';
-
-            // Add to container
-            container.appendChild(particle);
-
-            // Animate upward
-            setTimeout(() => {
-                particle.style.transform = `translate(${endX - startX}px, ${endY - startY}px) rotate(${Math.random() * 360}deg)`;
-                particle.style.opacity = '0';
-            }, 10);
-
-            // Remove after animation completes
-            setTimeout(() => {
-                if (container.contains(particle)) {
-                    container.removeChild(particle);
-                }
-            }, 3000);
-        }
-    }
-
-    function playSound(type) {
-        // Create audio elements with different sounds for each emoji type
-        let soundUrl;
-
-        switch(type) {
-            case 'twinkle':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/success.mp3';
-                break;
-            case 'pop':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
-                break;
-            case 'balloon':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/notification.mp3';
-                break;
-            case 'magic':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/toggle.mp3';
-                break;
-            default:
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
-        }
-
-        // Create and play the audio
-        const audio = new Audio(soundUrl);
-        audio.volume = 0.5; // 50% volume
-        audio.play().catch(e => console.log('Audio play failed:', e));
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        const icon = document.getElementById('themeIcon');
-
-        if (savedTheme === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            icon.classList.replace('fa-moon', 'fa-sun');
-        }
-
-        // Add animations to the cards with a slight delay between each
-        const cards = document.querySelectorAll('.card');
-        cards.forEach((card, index) => {
-            setTimeout(() => {
-                card.style.opacity = '0';
-                card.style.animation = 'fadeIn 0.5s forwards';
-            }, index * 100);
-        });
-    });
-</script>
+<!-- Include external JavaScript file -->
+<script th:src="@{/js/storylist.js}"></script>
 </body>
 </html>

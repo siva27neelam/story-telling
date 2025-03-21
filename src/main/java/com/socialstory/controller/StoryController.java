@@ -1,10 +1,14 @@
+// StoryController.java - Simplified with service-focused approach
 package com.socialstory.controller;
 
+import com.socialstory.model.Question;
 import com.socialstory.model.Story;
 import com.socialstory.model.StoryPage;
+import com.socialstory.service.QuestionService;
 import com.socialstory.service.StoryService;
 import com.socialstory.repository.StoryPageRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -12,21 +16,21 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
+@Slf4j
 @Controller
 @RequestMapping("/stories")
+@RequiredArgsConstructor
 public class StoryController {
 
     private final StoryService storyService;
     private final StoryPageRepository storyPageRepository;
-
-    @Autowired
-    public StoryController(StoryService storyService, StoryPageRepository storyPageRepository) {
-        this.storyService = storyService;
-        this.storyPageRepository = storyPageRepository;
-    }
+    private final QuestionService questionService;
 
     @GetMapping
     public String listStories(Model model) {
@@ -43,13 +47,24 @@ public class StoryController {
     @PostMapping("/create")
     public String createStory(@ModelAttribute Story story,
                               @RequestParam(value = "imageFile", required = false) List<MultipartFile> images,
+                              @RequestParam(value = "coverImageFile", required = false) MultipartFile coverImageFile,
                               RedirectAttributes redirectAttributes) {
         // Initialize pages list if null
         if (story.getPages() == null) {
             story.setPages(new ArrayList<>());
         }
 
-        // Process images if they exist
+        // Process cover image if provided
+        if (coverImageFile != null && !coverImageFile.isEmpty()) {
+            try {
+                story.setCoverImage(coverImageFile.getBytes());
+                story.setCoverImageType(coverImageFile.getContentType());
+            } catch (Exception e) {
+                log.error("Error processing cover image: {}", e.getMessage());
+            }
+        }
+
+        // Process page images if they exist
         if (images != null) {
             for (int i = 0; i < story.getPages().size(); i++) {
                 StoryPage page = story.getPages().get(i);
@@ -58,13 +73,13 @@ public class StoryController {
                         page.setImageData(images.get(i).getBytes());
                         page.setImageType(images.get(i).getContentType());
                     } catch (Exception e) {
-                        // Log error and continue
-                        e.printStackTrace();
+                        log.error("Error processing page image: {}", e.getMessage());
                     }
                 }
             }
         }
 
+        // Save the story (service handles questions)
         storyService.createStory(story);
         redirectAttributes.addFlashAttribute("message", "Story created successfully!");
         return "redirect:/stories";
@@ -74,6 +89,15 @@ public class StoryController {
     public String viewStory(@PathVariable Long id, Model model) {
         Story story = storyService.getStoryById(id);
         model.addAttribute("story", story);
+
+        // Add questions for each page to the model
+        Map<Long, List<Question>> questionsByPage = new HashMap<>();
+        for (StoryPage page : story.getPages()) {
+            List<Question> questions = questionService.getQuestionsByPageId(page.getId());
+            questionsByPage.put(page.getId(), questions);
+        }
+        model.addAttribute("questionsByPage", questionsByPage);
+
         return "story/view";
     }
 
@@ -96,6 +120,15 @@ public class StoryController {
     public String showEditForm(@PathVariable Long id, Model model) {
         Story story = storyService.getStoryById(id);
         model.addAttribute("story", story);
+
+        // Add questions for each page to the model
+        Map<Long, List<Question>> questionsByPage = new HashMap<>();
+        for (StoryPage page : story.getPages()) {
+            List<Question> questions = questionService.getQuestionsByPageId(page.getId());
+            questionsByPage.put(page.getId(), questions);
+        }
+        model.addAttribute("questionsByPage", questionsByPage);
+
         return "story/edit";
     }
 
@@ -103,7 +136,9 @@ public class StoryController {
     public String updateStory(@PathVariable Long id,
                               @ModelAttribute Story story,
                               @RequestParam(value = "imageFile", required = false) List<MultipartFile> images,
+                              @RequestParam(value = "coverImageFile", required = false) MultipartFile coverImageFile,
                               @RequestParam(value = "keepExistingImage", required = false) List<Boolean> keepExistingImages,
+                              @RequestParam(value = "keepExistingCover", required = false) Boolean keepExistingCover,
                               RedirectAttributes redirectAttributes) {
         Story existingStory = storyService.getStoryById(id);
         story.setId(id);
@@ -130,13 +165,26 @@ public class StoryController {
                         page.setImageData(images.get(i).getBytes());
                         page.setImageType(images.get(i).getContentType());
                     } catch (Exception e) {
-                        // Log error and continue
-                        e.printStackTrace();
+                        log.error("Error processing page image: {}", e.getMessage());
                     }
                 }
             }
         }
 
+        // Process cover image
+        if (keepExistingCover != null && keepExistingCover) {
+            story.setCoverImage(existingStory.getCoverImage());
+            story.setCoverImageType(existingStory.getCoverImageType());
+        } else if (coverImageFile != null && !coverImageFile.isEmpty()) {
+            try {
+                story.setCoverImage(coverImageFile.getBytes());
+                story.setCoverImageType(coverImageFile.getContentType());
+            } catch (Exception e) {
+                log.error("Error processing cover image: {}", e.getMessage());
+            }
+        }
+
+        // Update the story (service handles questions)
         storyService.updateStory(story);
         redirectAttributes.addFlashAttribute("message", "Story updated successfully!");
         return "redirect:/stories";
@@ -149,18 +197,56 @@ public class StoryController {
         return "redirect:/stories";
     }
 
-    // Debug endpoint
-    @GetMapping("/debug/page/{pageId}")
+    @GetMapping("/cover/{id}")
     @ResponseBody
-    public String debugPage(@PathVariable Long pageId) {
-        StoryPage page = storyPageRepository.findById(pageId)
-                .orElseThrow(() -> new RuntimeException("Page not found"));
+    public ResponseEntity<byte[]> getCoverImage(@PathVariable Long id) {
+        Story story = storyService.getStoryById(id);
 
-        return String.format(
-                "Page ID: %d\nImage Type: %s\nImage Data Length: %d bytes",
-                page.getId(),
-                page.getImageType(),
-                page.getImageData() != null ? page.getImageData().length : 0
-        );
+        if (story.getCoverImage() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(story.getCoverImageType()))
+                .body(story.getCoverImage());
+    }
+
+    // REST endpoints for questions remain the same
+    @GetMapping("/api/pages/{pageId}/questions")
+    @ResponseBody
+    public ResponseEntity<List<Question>> getQuestionsForPage(@PathVariable Long pageId) {
+        List<Question> questions = questionService.getQuestionsByPageId(pageId);
+        return ResponseEntity.ok(questions);
+    }
+
+    @GetMapping("/api/stories/{storyId}/questions")
+    @ResponseBody
+    public ResponseEntity<List<Question>> getQuestionsForStory(@PathVariable Long storyId) {
+        List<Question> questions = questionService.getQuestionsByStoryId(storyId);
+        return ResponseEntity.ok(questions);
+    }
+
+    @PostMapping("/api/pages/{pageId}/questions")
+    @ResponseBody
+    public ResponseEntity<Question> addQuestion(@PathVariable Long pageId, @RequestBody Question question) {
+        Question savedQuestion = questionService.createQuestion(question, pageId);
+        return ResponseEntity.ok(savedQuestion);
+    }
+
+    @PutMapping("/api/questions/{id}")
+    @ResponseBody
+    public ResponseEntity<Question> updateQuestion(@PathVariable Long id, @RequestBody Question question) {
+        question.setId(id);
+        Question updatedQuestion = questionService.updateQuestion(question);
+        return ResponseEntity.ok(updatedQuestion);
+    }
+
+    @DeleteMapping("/api/questions/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Boolean>> deleteQuestion(@PathVariable Long id) {
+        questionService.deleteQuestion(id);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("deleted", Boolean.TRUE);
+        return ResponseEntity.ok(response);
     }
 }

@@ -33,7 +33,8 @@
         <div class="story-pages view-mode">
             <div th:each="page, stat : ${story.pages}"
                  th:class="${stat.first ? 'story-page active' : 'story-page'}"
-                 th:id="'page-' + ${stat.index}">
+                 th:id="'page-' + ${stat.index}"
+                 th:data-page-id="${page.id}">
 
                 <!-- Updated Image Display -->
                 <img th:if="${page.imageData != null}"
@@ -47,7 +48,17 @@
     </div>
 </div>
 
-<!-- Navigation buttons with enhanced styling -->
+<!-- Before the navigation buttons -->
+<div class="progress-container">
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-text">
+        <span id="currentPage">1</span>/<span id="totalPages" th:text="${story.pages.size()}">5</span>
+    </div>
+</div>
+
+<!-- Then the navigation buttons -->
 <div class="navigation-buttons">
     <button onclick="previousPage()" class="btn btn-secondary" id="prevBtn" disabled>
         <i class="fas fa-chevron-left"></i> Previous
@@ -57,9 +68,9 @@
         <i class="fas fa-volume-up"></i> Read Aloud
     </button>
 
-    <span class="page-indicator">
-        Page <span id="currentPage">1</span> of <span th:text="${story.pages.size()}">5</span>
-    </span>
+    <button onclick="showQuestions()" class="btn btn-questions has-questions" id="questionsBtn">
+        <i class="fas fa-question-circle"></i> Questions
+    </button>
 
     <button onclick="nextPage()" class="btn btn-primary" id="nextBtn">
         Next <i class="fas fa-chevron-right"></i>
@@ -68,6 +79,32 @@
     <a th:href="@{/stories}" class="btn btn-success" id="exitBtn" style="display: none;">
         <i class="fas fa-check"></i> The End!
     </a>
+</div>
+
+<!-- Question Modal -->
+<div class="question-modal" id="questionModal">
+    <div class="question-container">
+        <div class="question-badge">Q</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="questionProgress"></div>
+        </div>
+        <h3 class="question-title">Question <span id="currentQuestionNum">1</span>/<span id="totalQuestions">3</span></h3>
+        <div class="question-text" id="questionText">
+            What was the name of the main character in this story?
+        </div>
+        <div id="optionsContainer">
+            <button class="option-btn" onclick="checkAnswer(0)">Option 1</button>
+            <button class="option-btn" onclick="checkAnswer(1)">Option 2</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+    </div>
+</div>
+
+<!-- Question Completed Animation -->
+<div class="question-completed" id="questionCompleted">
+    <div class="celebration-icon">🎉</div>
+    <h3>Great job!</h3>
+    <p>You've answered all the questions correctly!</p>
 </div>
 
 <!-- Magic Corner Menu -->
@@ -94,440 +131,15 @@
 <!-- Particle Container -->
 <div id="particle-container"></div>
 
+<!-- Include story view JavaScript -->
+<script th:src="@{/js/storyview.js}"></script>
+<script th:src="@{/js/questions.js}"></script>
+
 <script th:inline="javascript">
-    let currentPageIndex = 0;
+    // Pass Thymeleaf data to JavaScript
     const totalPages = [[${story.pages.size()}]];
-    let speech = null;
-    let magicMenuOpen = false;
-    let isSpeaking = false;
-    let speechSynthVoices = [];
-
-    function showPage(index) {
-        // Create a page turn effect
-        const pageElement = document.getElementById('page-' + index);
-
-        // Stop any ongoing speech
-        stopReading();
-
-        // Hide all pages
-        document.querySelectorAll('.story-page').forEach(page => {
-            page.classList.remove('active');
-        });
-
-        // Show the selected page with animation
-        pageElement.style.opacity = '0';
-        pageElement.classList.add('active');
-
-        setTimeout(() => {
-            pageElement.style.opacity = '1';
-            pageElement.style.transform = 'translateY(0)';
-        }, 50);
-
-        // Update navigation buttons
-        document.getElementById('prevBtn').disabled = index === 0;
-        document.getElementById('nextBtn').style.display = index === totalPages - 1 ? 'none' : 'inline-block';
-        document.getElementById('exitBtn').style.display = index === totalPages - 1 ? 'inline-block' : 'none';
-
-        // Update page indicator
-        document.getElementById('currentPage').textContent = index + 1;
-
-        // If it's the last page, celebrate
-        if (index === totalPages - 1) {
-            setTimeout(() => {
-                createShower('⭐');
-                playSound('twinkle');
-            }, 500);
-        }
-    }
-
-    function nextPage() {
-        if (currentPageIndex < totalPages - 1) {
-            const oldPage = document.getElementById('page-' + currentPageIndex);
-            oldPage.style.transform = 'translateX(-100px)';
-            oldPage.style.opacity = '0';
-
-            currentPageIndex++;
-
-            const newPage = document.getElementById('page-' + currentPageIndex);
-            newPage.style.transform = 'translateX(100px)';
-
-            // Play page turn sound
-            playSound('page-turn');
-
-            setTimeout(() => {
-                showPage(currentPageIndex);
-            }, 300);
-        }
-    }
-
-    function previousPage() {
-        if (currentPageIndex > 0) {
-            const oldPage = document.getElementById('page-' + currentPageIndex);
-            oldPage.style.transform = 'translateX(100px)';
-            oldPage.style.opacity = '0';
-
-            currentPageIndex--;
-
-            const newPage = document.getElementById('page-' + currentPageIndex);
-            newPage.style.transform = 'translateX(-100px)';
-
-            // Play page turn sound
-            playSound('page-turn');
-
-            setTimeout(() => {
-                showPage(currentPageIndex);
-            }, 300);
-        }
-    }
-
-    // Initialize speech synthesis
-    function initSpeechSynthesis() {
-        // Get available voices
-        speechSynthVoices = window.speechSynthesis.getVoices();
-
-        // If voices aren't loaded yet, wait for them
-        if (speechSynthVoices.length === 0) {
-            window.speechSynthesis.addEventListener('voiceschanged', () => {
-                speechSynthVoices = window.speechSynthesis.getVoices();
-            });
-        }
-    }
-
-    function toggleReadAloud() {
-        const readBtn = document.getElementById('readBtn');
-        if (speech && window.speechSynthesis.speaking) {
-            stopReading();
-        } else {
-            const currentText = document.querySelector('.story-page.active .story-text').textContent;
-            startReading(currentText);
-            readBtn.classList.add('playing');
-
-            // Visual indication that reading is happening
-            createTinyShower('💬', 3, true);
-        }
-    }
-
-    function startReading(text) {
-        // Stop any current reading
-        window.speechSynthesis.cancel();
-
-        speech = new SpeechSynthesisUtterance(text);
-
-        // Configure professional voice
-        speech.rate = 0.9; // Slightly slower for clarity
-        speech.pitch = 1.0; // Natural pitch
-        speech.volume = 1.0; // Full volume
-
-        // Find a suitable voice
-        if (speechSynthVoices.length > 0) {
-            // Try to find an English voice labeled as "Google" which tends to sound more professional
-            let professionalVoice = speechSynthVoices.find(voice =>
-                voice.lang.includes('en') && voice.name.includes('Google'));
-
-            // Fallback to any English voice
-            if (!professionalVoice) {
-                professionalVoice = speechSynthVoices.find(voice => voice.lang.includes('en'));
-            }
-
-            // Use the first available voice if no English voice is found
-            speech.voice = professionalVoice || speechSynthVoices[0];
-        }
-
-        // Speaking events
-        speech.onstart = () => {
-            isSpeaking = true;
-            const readBtn = document.getElementById('readBtn');
-            readBtn.classList.add('playing');
-
-            // Show reading indicator
-            showReadingIndicator();
-        };
-
-        speech.onend = () => {
-            isSpeaking = false;
-            const readBtn = document.getElementById('readBtn');
-            readBtn.classList.remove('playing');
-
-            // Hide reading indicator
-            hideReadingIndicator();
-        };
-
-        // Start speaking
-        window.speechSynthesis.speak(speech);
-    }
-
-    // Show a subtle reading indicator
-    function showReadingIndicator() {
-        let indicator = document.querySelector('.reading-indicator');
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.className = 'reading-indicator';
-            indicator.innerHTML = `
-                <div class="indicator-icon">🔊</div>
-                <div class="indicator-dots">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                </div>
-            `;
-            document.body.appendChild(indicator);
-        }
-
-        indicator.style.display = 'flex';
-        indicator.style.opacity = '0';
-        indicator.style.transform = 'translateY(20px)';
-
-        setTimeout(() => {
-            indicator.style.opacity = '1';
-            indicator.style.transform = 'translateY(0)';
-        }, 10);
-    }
-
-    // Hide reading indicator
-    function hideReadingIndicator() {
-        const indicator = document.querySelector('.reading-indicator');
-        if (indicator) {
-            indicator.style.opacity = '0';
-            indicator.style.transform = 'translateY(20px)';
-
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 300);
-        }
-    }
-
-    function stopReading() {
-        if (speech) {
-            window.speechSynthesis.cancel();
-            const readBtn = document.getElementById('readBtn');
-            readBtn.classList.remove('playing');
-            isSpeaking = false;
-
-            // Hide reading indicator
-            hideReadingIndicator();
-        }
-    }
-
-    function toggleTheme() {
-        const body = document.body;
-        const icon = document.getElementById('themeIcon');
-
-        if (body.getAttribute('data-theme') === 'dark') {
-            body.removeAttribute('data-theme');
-            icon.classList.replace('fa-sun', 'fa-moon');
-            localStorage.setItem('theme', 'light');
-        } else {
-            body.setAttribute('data-theme', 'dark');
-            icon.classList.replace('fa-moon', 'fa-sun');
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    function toggleMagicMenu() {
-        const menu = document.getElementById('magicMenu');
-        magicMenuOpen = !magicMenuOpen;
-
-        if (magicMenuOpen) {
-            menu.style.display = 'flex';
-            setTimeout(() => {
-                menu.style.opacity = '1';
-                menu.style.transform = 'scale(1)';
-            }, 10);
-        } else {
-            menu.style.opacity = '0';
-            menu.style.transform = 'scale(0.5)';
-            setTimeout(() => {
-                menu.style.display = 'none';
-            }, 300);
-        }
-    }
-
-    function createShower(emoji) {
-        const container = document.getElementById('particle-container');
-        const count = 20 + Math.floor(Math.random() * 10); // Between 20-30 particles
-
-        // Clear existing particles if there are too many
-        if (container.children.length > 100) {
-            container.innerHTML = '';
-        }
-
-        // Play a fun sound effect
-        const audioEffects = {
-            '⭐': 'twinkle',
-            '❤️': 'pop',
-            '🎈': 'balloon',
-            '🌈': 'magic'
-        };
-
-        playSound(audioEffects[emoji] || 'pop');
-
-        for (let i = 0; i < count; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.textContent = emoji;
-
-            // Random position from click or center if no event
-            const startX = 40 + Math.random() * (window.innerWidth - 80);
-            const startY = window.innerHeight;
-
-            // Random end position
-            const endX = startX + (Math.random() - 0.5) * 300;
-            const endY = 100 + Math.random() * 400;
-
-            // Random sizes - much larger now
-            const size = 40 + Math.random() * 60;
-
-            // Set styles
-            particle.style.left = startX + 'px';
-            particle.style.top = startY + 'px';
-            particle.style.fontSize = size + 'px';
-
-            // Add to container
-            container.appendChild(particle);
-
-            // Animate upward
-            setTimeout(() => {
-                particle.style.transform = `translate(${endX - startX}px, ${endY - startY}px) rotate(${Math.random() * 360}deg)`;
-                particle.style.opacity = '0';
-            }, 10);
-
-            // Remove after animation completes
-            setTimeout(() => {
-                if (container.contains(particle)) {
-                    container.removeChild(particle);
-                }
-            }, 3000);
-        }
-    }
-
-    function createTinyShower(emoji, count = 5, nearButton = false) {
-        const container = document.getElementById('particle-container');
-
-        for (let i = 0; i < count; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle tiny';
-            particle.textContent = emoji;
-
-            let startX, startY;
-
-            if (nearButton) {
-                // Position near the Read Aloud button
-                const button = document.getElementById('readBtn');
-                const rect = button.getBoundingClientRect();
-                startX = rect.x + rect.width/2 + (Math.random() - 0.5) * 20;
-                startY = rect.y;
-            } else {
-                startX = Math.random() * window.innerWidth;
-                startY = Math.random() * window.innerHeight;
-            }
-
-            // Random end position
-            const endX = startX + (Math.random() - 0.5) * 100;
-            const endY = startY - 50 - Math.random() * 50;
-
-            // Set styles
-            particle.style.left = startX + 'px';
-            particle.style.top = startY + 'px';
-            particle.style.fontSize = 20 + Math.random() * 10 + 'px';
-
-            // Add to container
-            container.appendChild(particle);
-
-            // Animate upward
-            setTimeout(() => {
-                particle.style.transform = `translate(${endX - startX}px, ${endY - startY}px) rotate(${Math.random() * 30}deg)`;
-                particle.style.opacity = '0';
-            }, 10);
-
-            // Remove after animation completes
-            setTimeout(() => {
-                if (container.contains(particle)) {
-                    container.removeChild(particle);
-                }
-            }, 2000);
-        }
-    }
-
-    function playSound(type) {
-        // Create audio elements with different sounds
-        let soundUrl;
-
-        switch(type) {
-            case 'twinkle':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/success.mp3';
-                break;
-            case 'pop':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
-                break;
-            case 'balloon':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/notification.mp3';
-                break;
-            case 'magic':
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/toggle.mp3';
-                break;
-            case 'page-turn':
-                soundUrl = 'https://cdn.jsdelivr.net/gh/Leimi/SoundButton@master/sounds/sfx_sounds_page-turn-01a.mp3';
-                break;
-            default:
-                soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
-        }
-
-        // Create and play the audio
-        const audio = new Audio(soundUrl);
-        audio.volume = 0.4; // 40% volume
-        audio.play().catch(e => console.log('Audio play failed:', e));
-    }
-
-    // Set initial theme from localStorage and initialize page
-    document.addEventListener('DOMContentLoaded', () => {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        const icon = document.getElementById('themeIcon');
-
-        if (savedTheme === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            icon.classList.replace('fa-moon', 'fa-sun');
-        }
-
-        // Initialize first page with animation
-        const firstPage = document.querySelector('.story-page.active');
-        if (firstPage) {
-            firstPage.style.opacity = '0';
-            firstPage.style.transform = 'translateY(20px)';
-
-            setTimeout(() => {
-                firstPage.style.opacity = '1';
-                firstPage.style.transform = 'translateY(0)';
-            }, 300);
-        }
-
-        // Add subtle sparkle to title
-        setTimeout(() => {
-            createTinyShower('✨', 3);
-        }, 1000);
-
-        // Initialize speech synthesis
-        initSpeechSynthesis();
-    });
-
-    // Handle keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight') nextPage();
-        if (e.key === 'ArrowLeft') previousPage();
-        if (e.key === ' ') {
-            e.preventDefault();
-            toggleReadAloud();
-        }
-        if (e.key === 'm') {
-            toggleMagicMenu();
-        }
-    });
-
-    // Close magic menu when clicking outside
-    document.addEventListener('click', (e) => {
-        if (magicMenuOpen && !e.target.closest('.magic-corner')) {
-            toggleMagicMenu();
-        }
-    });
+    const questionsByPage = [[${questionsByPage}]];
 </script>
+
 </body>
 </html>
