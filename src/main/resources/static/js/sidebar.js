@@ -55,3 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
         themeIcon.classList.replace('fa-moon', 'fa-sun');
     }
 });
+
+/**
+ * Show suggestion modal
+ */
+function showSuggestionModal() {
+    const suggestionModal = new bootstrap.Modal(document.getElementById('suggestionModal'));
+    suggestionModal.show();
+}
+
+/**
+ * Show newsletter modal
+ */
+function showNewsletterModal() {
+    const newsletterModal = new bootstrap.Modal(document.getElementById('newsletterModal'));
+    newsletterModal.show();
+}
