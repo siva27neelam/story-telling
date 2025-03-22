@@ -12,9 +12,9 @@ and a hand-painted print aesthetic with a heading Thirsty Crow
 
 gradle clean build
 docker login -u siva27neelam
-docker build -t siva27neelam/story-telling:latest -t siva27neelam/story-telling:3.0.0 .
+docker build -t siva27neelam/story-telling:latest -t siva27neelam/story-telling:4.0.0 .
 docker push siva27neelam/story-telling:latest
-docker push siva27neelam/story-telling:3.0.0
+docker push siva27neelam/story-telling:4.0.0
 docker push --all-tags siva27neelam/story-telling
 
 
