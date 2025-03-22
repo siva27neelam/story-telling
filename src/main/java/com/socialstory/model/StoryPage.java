@@ -24,6 +24,7 @@ public class StoryPage {
 
     @Lob
     @Column(name = "image_data", columnDefinition = "LONGBLOB")
+    @Basic(fetch = FetchType.LAZY)
     private byte[] imageData;
 
     @Column(name = "image_type")

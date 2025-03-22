@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "stories")
+@Table(name = "stories", indexes = {
+        @Index(name = "idx_story_created_at", columnList = "createdAt")
+})
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -37,6 +39,7 @@ public class Story {
 
     @Lob
     @Column(name = "cover_image", columnDefinition = "LONGBLOB")
+    @Basic(fetch = FetchType.LAZY)
     private byte[] coverImage;
 
     @Column(name = "cover_image_type")

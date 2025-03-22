@@ -1,6 +1,7 @@
-// StoryController.java - Simplified with service-focused approach
+// StoryController.java - Updated to use DTOs for the list page
 package com.socialstory.controller;
 
+import com.socialstory.dto.StoryListDTO;
 import com.socialstory.model.Question;
 import com.socialstory.model.Story;
 import com.socialstory.model.StoryPage;
@@ -40,7 +41,7 @@ public class StoryController {
             Model model) {
 
         // 6 stories per page (3 rows x 2 columns)
-        Page<Story> storyPage = storyService.getStoriesPage(page, size);
+        Page<StoryListDTO> storyPage = storyService.getStoriesPage(page, size);
 
         model.addAttribute("stories", storyPage.getContent());
         model.addAttribute("currentPage", page);
@@ -50,6 +51,7 @@ public class StoryController {
         return "story/list";
     }
 
+    // Rest of the controller remains the same
     @GetMapping("/create")
     public String showCreateForm(Model model) {
         model.addAttribute("story", new Story());
@@ -125,6 +127,7 @@ public class StoryController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(page.getImageType()))
+                .header("Cache-Control", "max-age=604800, public") // 7 days cache
                 .body(page.getImageData());
     }
 
@@ -220,6 +223,7 @@ public class StoryController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(story.getCoverImageType()))
+                .header("Cache-Control", "max-age=604800, public") // 7 days cache
                 .body(story.getCoverImage());
     }
 

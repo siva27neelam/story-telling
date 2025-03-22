@@ -1,11 +1,14 @@
 // StoryService.java - Updated to handle all fields
 package com.socialstory.service;
 
+import com.socialstory.dto.StoryListDTO;
 import com.socialstory.model.Question;
 import com.socialstory.model.Story;
 import com.socialstory.model.StoryPage;
 import com.socialstory.repository.StoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -25,6 +28,7 @@ public class StoryService {
     private final StoryRepository storyRepository;
     private final QuestionService questionService;
 
+    @CacheEvict(value = "storiesPageCache", allEntries = true)
     public Story createStory(Story story) {
         // Set bidirectional relationships for pages
         if (story.getPages() != null) {
@@ -42,6 +46,7 @@ public class StoryService {
         return savedStory;
     }
 
+    @CacheEvict(value = "storiesPageCache", allEntries = true)
     public Story updateStory(Story updatedStory) {
         Story existingStory = storyRepository.findById(updatedStory.getId())
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + updatedStory.getId()));
@@ -97,12 +102,19 @@ public class StoryService {
         return savedStory;
     }
 
-    // In StoryService.java
-    @Transactional
-    public Page<Story> getStoriesPage(int page, int size) {
+    // Updated method with caching
+    @Cacheable(value = "storiesPageCache", key = "#page + '-' + #size")
+    public Page<StoryListDTO> getStoriesPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return storyRepository.findAllStoriesForList(pageRequest);
+    }
+
+    // Original method for backward compatibility
+    public Page<Story> getFullStoriesPage(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return storyRepository.findAll(pageRequest);
     }
+
     /**
      * Process questions for each page of the story
      */
@@ -137,6 +149,7 @@ public class StoryService {
         return storyRepository.findAll();
     }
 
+    @CacheEvict(value = "storiesPageCache", allEntries = true)
     public void deleteStory(Long id) {
         storyRepository.deleteById(id);
     }
