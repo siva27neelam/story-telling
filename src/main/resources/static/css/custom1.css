@@ -1,3 +1,32 @@
+
+/* Vintage Book Illustration Theme - Earthy Warm Tones */
+:root {
+    /* Primary colors */
+    --primary-color: #A45A52;     /* Faded brick red */
+    --secondary-color: #5A7A6F;   /* Muted forest green */
+
+    /* Accents */
+    --accent-1: #D9B88F;          /* Aged parchment */
+    --accent-2: #7D5C4E;          /* Rich walnut brown */
+    --accent-3: #BCA68E;          /* Warm taupe */
+
+    /* Backgrounds */
+    --bg-color: #E8D9C0;          /* Antique paper */
+    --card-bg: #F2EAD9;           /* Cream parchment */
+
+    /* Text colors */
+    --text-color: #4A3B2E;        /* Dark sepia */
+    --text-secondary: #695E4E;    /* Medium sepia */
+
+    /* Utility colors */
+    --success: #738268;           /* Olive green */
+    --warning: #B9824F;           /* Burnished copper */
+
+    /* Border styles */
+    --border-width: 3px;
+    --border-color: #4A3B2E;      /* Dark sepia */
+    --border-radius: 8px;
+}
 /* Fun Footer */
 .fun-footer {
     position: fixed;
@@ -91,17 +120,8 @@
     transition: transform 3s ease-out, opacity 3s ease-out;
     font-size: 40px; /* Larger base size */
 }/* Root Variables - Light Theme */
-:root {
-    --primary-color: #FF6B6B;     /* Cheerful Red */
-    --secondary-color: #4ECDC4;   /* Bright Turquoise */
-    --accent-1: #FFE66D;         /* Sunny Yellow */
-    --accent-2: #95E1D3;         /* Soft Mint */
-    --accent-3: #A6D1E6;         /* Sky Blue */
-    --text-color: #2D3436;       /* Soft Black */
-    --bg-color: #F7F9FC;         /* Light Background */
-    --card-bg: #FFFFFF;          /* White */
-    --success: #7bed9f;          /* Soft Green */
-}
+/* 1950s Children's Book Theme Variables - Warm Vintage Palette */
+
 
 /* Dark Theme Variables */
 [data-theme="dark"] {
@@ -117,6 +137,7 @@
 
 /* Base Styles */
 body {
+    font-family: var(--body-font);
     background: linear-gradient(135deg, var(--bg-color) 0%, var(--accent-3) 100%);
     font-family: 'Nunito', sans-serif;
     color: var(--text-color);
@@ -215,7 +236,12 @@ body {
         opacity: 0.4;
     }
 }
-
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+}
 /* Container Styles */
 .container {
     padding: 0 15px;
@@ -518,8 +544,64 @@ h2 {
     width: 100px;
 }
 
-.card-body {
-    padding: 1.8rem;
+/* New Footer Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.action-btn {
+    border: none;
+    border-radius: 50px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+}
+
+.action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.action-btn:active {
+    transform: translateY(1px);
+}
+
+.create-btn {
+    background: linear-gradient(45deg, var(--primary-color), #ff8c8c);
+}
+
+.theme-btn {
+    background: linear-gradient(45deg, var(--secondary-color), #7ee6e0);
+}
+
+.sort-btn {
+    background: linear-gradient(45deg, var(--accent-1), #fff99d);
+    color: #333;
+}
+
+.sort-btn:hover {
+    color: #333;
+}
+
+.home-btn {
+    background: linear-gradient(45deg, var(--accent-2), #b5f1e3);
+    color: #333;
+}
+
+.home-btn:hover {
+    color: #333;
 }
 
 /* Animation */
@@ -738,13 +820,67 @@ h2 {
 
 /* Story View Page Specific Styles */
 .story-title {
-    font-size: 2.5rem;
+font-family: var(--heading-font);
     font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 2.5rem;
     text-align: center;
     margin-bottom: 1.5rem;
     color: var(--text-color);
     position: relative;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+    font-family: var(--heading-font);
+    font-weight: 600;
+}
+.story-text {
+    font-family: var(--body-font);
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+}
+.btn {
+    font-family: var(--heading-font);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+/* Professional typography enhancements */
+
+/* Improved line heights for better readability */
+p, .story-text {
+    line-height: 1.8;
+}
+
+/* Text balance for headings */
+h1, h2, h3, .story-title {
+    line-height: 1.2;
+    margin-bottom: 0.5em;
+}
+
+/* Subtle text shadow for headings to improve contrast */
+.story-title {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Refined font sizes for better hierarchy */
+h2 {
+    font-size: 2.2rem;
+}
+
+.card-title {
+    font-size: 1.25rem;
+}
+
+.story-text {
+    font-size: 1.2rem;
+}
+
+/* Small caps for certain UI elements (optional) */
+.progress-text, .nav-label {
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
 }
 
 .story-title::after {
@@ -1403,4 +1539,52 @@ h2 {
 
 .story-tags {
     display: none;
+}
+
+.sort-notification {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--card-bg);
+    padding: 10px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--accent-1);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Pagination Styling */
+.pagination {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.pagination .page-link {
+    color: var(--text-color);
+    background-color: var(--card-bg);
+    border-color: var(--accent-2);
+    border-radius: 8px;
+    margin: 0 3px;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: var(--accent-1);
+    color: var(--neutral-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: var(--neutral-light);
+    background-color: var(--card-bg);
+    border-color: var(--accent-2);
 }

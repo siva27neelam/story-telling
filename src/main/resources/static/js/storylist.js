@@ -127,11 +127,74 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Add animations to the cards with a slight delay between each
-    const cards = document.querySelectorAll('.card');
-    cards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.opacity = '0';
-            card.style.animation = 'fadeIn 0.5s forwards';
-        }, index * 100);
+
+});
+
+/**
+ * Sort stories alphabetically
+ */
+function sortStories() {
+    const storiesContainer = document.querySelector('.row');
+    const storyCards = Array.from(document.querySelectorAll('.col-md-4'));
+
+    // Sort cards by story title
+    storyCards.sort((a, b) => {
+        const titleA = a.querySelector('.card-title').textContent.toLowerCase();
+        const titleB = b.querySelector('.card-title').textContent.toLowerCase();
+        return titleA.localeCompare(titleB);
     });
+
+    // Reappend in sorted order
+    storyCards.forEach(card => {
+        storiesContainer.appendChild(card);
+    });
+
+    // Show a brief notification
+    const notification = document.createElement('div');
+    notification.className = 'sort-notification';
+    notification.textContent = 'Stories sorted alphabetically';
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.remove();
+        }, 500);
+    }, 2000);
+}
+
+// Add these functions to your storylist.js file
+
+let magicMenuOpen = false;
+
+/**
+ * Toggle magic menu open/closed
+ */
+function toggleMagicMenu() {
+    const menu = document.getElementById('magicMenu');
+    magicMenuOpen = !magicMenuOpen;
+
+    if (magicMenuOpen) {
+        menu.style.display = 'flex';
+        setTimeout(() => {
+            menu.style.opacity = '1';
+            menu.style.transform = 'scale(1)';
+        }, 10);
+
+        // Play sound
+        playSound('pop');
+    } else {
+        menu.style.opacity = '0';
+        menu.style.transform = 'scale(0.5)';
+        setTimeout(() => {
+            menu.style.display = 'none';
+        }, 300);
+    }
+}
+
+// Close magic menu when clicking outside
+document.addEventListener('click', (e) => {
+    if (magicMenuOpen && !e.target.closest('.magic-corner')) {
+        toggleMagicMenu();
+    }
 });

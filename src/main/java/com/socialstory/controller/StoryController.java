@@ -9,6 +9,7 @@ import com.socialstory.service.StoryService;
 import com.socialstory.repository.StoryPageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -33,8 +34,19 @@ public class StoryController {
     private final QuestionService questionService;
 
     @GetMapping
-    public String listStories(Model model) {
-        model.addAttribute("stories", storyService.getAllStories());
+    public String listStories(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "6") int size,
+            Model model) {
+
+        // 6 stories per page (3 rows x 2 columns)
+        Page<Story> storyPage = storyService.getStoriesPage(page, size);
+
+        model.addAttribute("stories", storyPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", storyPage.getTotalPages());
+        model.addAttribute("totalItems", storyPage.getTotalElements());
+
         return "story/list";
     }
 

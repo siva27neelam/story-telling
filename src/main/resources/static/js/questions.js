@@ -76,7 +76,6 @@ function updateQuestionsButton() {
  * Show the questions modal for the current page
  */
 function showQuestions() {
-alert("here");
     if (questionsAnswered.has(currentPageIndex)) {
         // Already answered questions for this page
         playSound('pop');

@@ -6,6 +6,9 @@ import com.socialstory.model.Story;
 import com.socialstory.model.StoryPage;
 import com.socialstory.repository.StoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
@@ -94,6 +97,12 @@ public class StoryService {
         return savedStory;
     }
 
+    // In StoryService.java
+    @Transactional
+    public Page<Story> getStoriesPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return storyRepository.findAll(pageRequest);
+    }
     /**
      * Process questions for each page of the story
      */
