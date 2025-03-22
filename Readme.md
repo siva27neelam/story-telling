@@ -17,4 +17,6 @@ docker push siva27neelam/story-telling:latest
 docker push siva27neelam/story-telling:4.0.0
 docker push --all-tags siva27neelam/story-telling
 
+Github actions to publish to docker hub now
+
 
