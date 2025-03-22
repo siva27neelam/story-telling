@@ -41,4 +41,7 @@ public class StoryPage {
     @OneToMany(mappedBy = "page", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Question> questions = new ArrayList<>();
+
+    @Column(name = "is_image_compressed")
+    private Boolean isImageCompressed = false;
 }

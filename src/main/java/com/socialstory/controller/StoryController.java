@@ -2,27 +2,25 @@
 package com.socialstory.controller;
 
 import com.socialstory.dto.StoryListDTO;
-import com.socialstory.model.Question;
-import com.socialstory.model.Story;
-import com.socialstory.model.StoryPage;
+import com.socialstory.model.*;
 import com.socialstory.service.QuestionService;
 import com.socialstory.service.StoryService;
 import com.socialstory.repository.StoryPageRepository;
+import com.socialstory.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Controller
@@ -33,12 +31,15 @@ public class StoryController {
     private final StoryService storyService;
     private final StoryPageRepository storyPageRepository;
     private final QuestionService questionService;
+    private final UserService userService;
 
     @GetMapping
     public String listStories(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "6") int size,
-            Model model) {
+            Model model,
+            Authentication authentication,
+            HttpSession session) {
 
         // 6 stories per page (3 rows x 2 columns)
         Page<StoryListDTO> storyPage = storyService.getStoriesPage(page, size);
@@ -47,6 +48,14 @@ public class StoryController {
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", storyPage.getTotalPages());
         model.addAttribute("totalItems", storyPage.getTotalElements());
+
+        // Add unread story indicator data for logged-in users
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            Set<Long> unreadStories = userService.getUnreadStoryIds(currentUser.getId());
+            model.addAttribute("unreadStories", unreadStories);
+            model.addAttribute("user", currentUser);
+        }
 
         return "story/list";
     }
@@ -100,7 +109,7 @@ public class StoryController {
     }
 
     @GetMapping("/view/{id}")
-    public String viewStory(@PathVariable Long id, Model model) {
+    public String viewStory(@PathVariable Long id, Model model, HttpSession session) {
         Story story = storyService.getStoryById(id);
         model.addAttribute("story", story);
 
@@ -111,6 +120,14 @@ public class StoryController {
             questionsByPage.put(page.getId(), questions);
         }
         model.addAttribute("questionsByPage", questionsByPage);
+
+        // Record interaction if user is logged in
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            UserStoryInteraction interaction = userService.recordStoryInteraction(
+                    currentUser, id, 0, false);
+            model.addAttribute("interactionId", interaction.getId());
+        }
 
         return "story/view";
     }

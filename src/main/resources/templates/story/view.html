@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Read Story</title>
@@ -23,9 +23,53 @@
     <div class="floating-element star3">✨</div>
 </div>
 
-<button onclick="toggleTheme()" class="btn theme-switch">
-    <i class="fas fa-moon" id="themeIcon"></i>
-</button>
+<!-- Hamburger Menu -->
+<div class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+        <!-- User info if logged in -->
+        <li sec:authorize="isAuthenticated()">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name" sec:authentication="name">User</div>
+            </div>
+        </li>
+
+        <!-- Login/Logout option -->
+        <li sec:authorize="!isAuthenticated()">
+            <a href="/login">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+            <a href="/logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
+
+        <!-- Theme toggle -->
+        <li>
+            <a href="javascript:void(0)" onclick="toggleThemeFromSidebar()">
+                <i class="fas fa-moon" id="sidebarThemeIcon"></i> Change Theme
+            </a>
+        </li>
+
+        <!-- Admin menu option -->
+        <li sec:authorize="isAuthenticated()">
+            <a href="/admin">
+                <i class="fas fa-shield-alt"></i> Admin Menu
+            </a>
+        </li>
+    </ul>
+</div>
+<!-- Overlay for closing sidebar -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div class="container mt-5">
     <div class="story-container">
@@ -141,6 +185,10 @@
     const totalPages = [[${story.pages.size()}]];
     const questionsByPage = [[${questionsByPage}]];
 </script>
+<!-- Add interaction data if user is logged in -->
+<div id="interactionData" th:if="${interactionId != null}"
+     th:data-interaction-id="${interactionId}" style="display: none;"></div>
+<script th:src="@{/js/sidebar.js}"></script>
 
 </body>
 </html>

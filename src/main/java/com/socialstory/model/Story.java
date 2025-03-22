@@ -50,4 +50,7 @@ public class Story {
     @OrderBy("pageOrder")
     @JsonManagedReference
     private List<StoryPage> pages = new ArrayList<>();
+
+    @Column(name = "is_cover_compressed")
+    private Boolean isCoverCompressed = false;
 }

@@ -121,19 +121,92 @@ function previousPage() {
     }
 }
 
-/**
- * Initialize speech synthesis
- */
 function initSpeechSynthesis() {
-    // Get available voices
-    speechSynthVoices = window.speechSynthesis.getVoices();
+    // Initialize voices array
+    speechSynthVoices = [];
 
-    // If voices aren't loaded yet, wait for them
+    // Function to load voices and select the best one
+    const loadVoices = () => {
+        // Get all available voices
+        const allVoices = window.speechSynthesis.getVoices();
+
+        // Top-tier voices known for natural sound (in order of preference)
+        const topVoices = [
+            "Google US English",
+            "Microsoft Zira",
+            "Samantha",
+            "Google US English Female"
+        ];
+
+        // Try to find one of our preferred voices
+        for (const voiceName of topVoices) {
+            const voice = allVoices.find(v => v.name.includes(voiceName));
+            if (voice) {
+                speechSynthVoices = [voice]; // Just use this single voice
+                console.log("Selected voice:", voice.name);
+                return; // Exit once we've found a good voice
+            }
+        }
+
+        // If no preferred voice found, try to find any US English voice
+        const usVoice = allVoices.find(v => v.lang === 'en-US');
+        if (usVoice) {
+            speechSynthVoices = [usVoice];
+            console.log("Fallback to US voice:", usVoice.name);
+            return;
+        }
+
+        // Last resort: just use the first English voice
+        const anyEnglishVoice = allVoices.find(v => v.lang.includes('en'));
+        if (anyEnglishVoice) {
+            speechSynthVoices = [anyEnglishVoice];
+            console.log("Using English voice:", anyEnglishVoice.name);
+        }
+    };
+
+    // Initial load
+    loadVoices();
+
+    // Wait for voices to be loaded (some browsers load asynchronously)
     if (speechSynthVoices.length === 0) {
-        window.speechSynthesis.addEventListener('voiceschanged', () => {
-            speechSynthVoices = window.speechSynthesis.getVoices();
-        });
+        window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
     }
+}
+
+function startReading(text) {
+    // Stop any current reading
+    window.speechSynthesis.cancel();
+
+    speech = new SpeechSynthesisUtterance(text);
+
+    // Configure voice settings for more natural sound
+    speech.rate = 0.85;        // Slightly slower for more natural pacing
+    speech.pitch = 1.05;       // Slight pitch adjustment for better intonation
+    speech.volume = 1.0;       // Full volume
+
+    // Use our selected voice
+    if (speechSynthVoices.length > 0) {
+        speech.voice = speechSynthVoices[0];
+    }
+
+    // Speaking events
+    speech.onstart = () => {
+        isSpeaking = true;
+        const readBtn = document.getElementById('readBtn');
+        readBtn.classList.add('playing');
+        showReadingIndicator();
+    };
+
+    speech.onend = () => {
+        isSpeaking = false;
+        const readBtn = document.getElementById('readBtn');
+        readBtn.classList.remove('playing');
+        hideReadingIndicator();
+        showAchievement('Listener', 'You listened to a page being read aloud!');
+    };
+
+    // Start speaking
+    window.speechSynthesis.speak(speech);
 }
 
 /**
@@ -153,58 +226,6 @@ function toggleReadAloud() {
     }
 }
 
-/**
- * Start reading the provided text
- * @param {string} text - The text to read aloud
- */
-function startReading(text) {
-    // Stop any current reading
-    window.speechSynthesis.cancel();
-
-    speech = new SpeechSynthesisUtterance(text);
-
-    // Configure professional voice
-    speech.rate = 0.9; // Slightly slower for clarity
-    speech.pitch = 1.0; // Natural pitch
-    speech.volume = 1.0; // Full volume
-
-    // Find a suitable voice
-    if (speechSynthVoices.length > 0) {
-        // Try to find an English voice labeled as "Google" which tends to sound more professional
-        let professionalVoice = speechSynthVoices.find(voice =>
-            voice.lang.includes('en') && voice.name.includes('Google'));
-
-        // Fallback to any English voice
-        if (!professionalVoice) {
-            professionalVoice = speechSynthVoices.find(voice => voice.lang.includes('en'));
-        }
-
-        // Use the first available voice if no English voice is found
-        speech.voice = professionalVoice || speechSynthVoices[0];
-    }
-
-    // Speaking events
-    speech.onstart = () => {
-        isSpeaking = true;
-        const readBtn = document.getElementById('readBtn');
-        readBtn.classList.add('playing');
-
-        // Show reading indicator
-        showReadingIndicator();
-    };
-
-    speech.onend = () => {
-        isSpeaking = false;
-        const readBtn = document.getElementById('readBtn');
-        readBtn.classList.remove('playing');
-
-        // Hide reading indicator
-        hideReadingIndicator();
-    };
-
-    // Start speaking
-    window.speechSynthesis.speak(speech);
-}
 
 /**
  * Show a subtle reading indicator
@@ -507,3 +528,95 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+
+// User metrics tracking
+let interactionId = null;
+let startTime = Date.now();
+let lastUpdateTime = startTime;
+let questionCorrectCount = 0;
+let questionTotalCount = 0;
+
+/**
+ * Initialize metrics tracking
+ */
+function initializeMetricsTracking() {
+    // Get interaction ID if logged in
+    const interactionData = document.getElementById('interactionData');
+    interactionId = interactionData ? interactionData.dataset.interactionId : null;
+
+    if (interactionId) {
+        // Setup periodic tracking update
+        setInterval(updateTimeSpent, 30000); // Update every 30 seconds
+
+        // Update on page change
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                updateTimeSpent();
+            }
+        });
+
+        // Update on page unload
+        window.addEventListener('beforeunload', function() {
+            updateTimeSpent();
+        });
+    }
+}
+
+/**
+ * Update time spent on story
+ */
+function updateTimeSpent() {
+    if (!interactionId) return;
+
+    const now = Date.now();
+    const timeSinceLastUpdate = Math.floor((now - lastUpdateTime) / 1000); // In seconds
+
+    if (timeSinceLastUpdate > 2) { // Only update if more than 2 seconds have passed
+        // Send update to server
+        fetch(`/api/interactions/${interactionId}/time`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ seconds: timeSinceLastUpdate })
+        }).catch(error => console.error('Failed to update time spent:', error));
+
+        lastUpdateTime = now;
+    }
+}
+
+/**
+ * Record question answer
+ * @param {boolean} correct - Whether the answer was correct
+ */
+function recordQuestionAnswer(correct) {
+    if (!interactionId) return;
+
+    questionTotalCount++;
+    if (correct) questionCorrectCount++;
+
+    // Send data to server
+    fetch(`/api/interactions/${interactionId}/question`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ correct: correct })
+    }).catch(error => console.error('Failed to record question answer:', error));
+}
+
+/**
+ * Record story completion
+ */
+function recordStoryCompletion() {
+    if (!interactionId) return;
+
+    // Send completion status to server
+    fetch(`/api/interactions/${interactionId}/complete`, {
+        method: 'POST'
+    }).catch(error => console.error('Failed to record completion:', error));
+}
+
+// Initialize tracking when DOM loads
+document.addEventListener('DOMContentLoaded', initializeMetricsTracking);

@@ -166,6 +166,11 @@ function checkAnswer(selectedIndex) {
         playSound('twinkle');
         createTinyShower('✨', 5, true);
 
+        // Record correct answer if interaction tracking is enabled
+        if (typeof recordQuestionAnswer === 'function') {
+            recordQuestionAnswer(true);
+        }
+
         // Move to next question or complete
         setTimeout(() => {
             options[selectedIndex].classList.remove('correct');
@@ -185,6 +190,11 @@ function checkAnswer(selectedIndex) {
         document.getElementById('feedback').textContent = 'Try again!';
         playSound('pop');
 
+        // Record incorrect answer if interaction tracking is enabled
+        if (typeof recordQuestionAnswer === 'function') {
+            recordQuestionAnswer(false);
+        }
+
         // Re-enable options after animation
         setTimeout(() => {
             options[selectedIndex].classList.remove('incorrect');
@@ -192,7 +202,6 @@ function checkAnswer(selectedIndex) {
         }, 500);
     }
 }
-
 /**
  * Complete all questions for the current page
  */

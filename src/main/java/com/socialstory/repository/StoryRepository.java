@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface StoryRepository extends JpaRepository<Story, Long> {
 
@@ -17,4 +19,7 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
 
     @Query("SELECT new com.socialstory.dto.StoryListDTO(s.id, s.title, s.tags, CASE WHEN s.coverImage IS NULL THEN false ELSE true END) FROM Story s ORDER BY s.createdAt DESC")
     Page<StoryListDTO> findAllStoriesForList(Pageable pageable);
+
+    @Query("SELECT s FROM Story s WHERE (s.isCoverCompressed = false OR s.isCoverCompressed IS NULL) AND s.coverImage IS NOT NULL")
+    List<Story> findUncompressedCoverImages(int limit, int offset);
 }

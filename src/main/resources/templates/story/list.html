@@ -1,101 +1,13 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><head>
     <title>Children's Stories</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <!-- Critical CSS -->
     <style>
-        :root {
-            --primary-color: #A45A52;
-            --secondary-color: #5A7A6F;
-            --accent-1: #D9B88F;
-            --accent-2: #7D5C4E;
-            --accent-3: #BCA68E;
-            --bg-color: #E8D9C0;
-            --card-bg: #F2EAD9;
-            --text-color: #4A3B2E;
-            --text-secondary: #695E4E;
-        }
-
-        [data-theme="dark"] {
-            --primary-color: #FF7B7B;
-            --secondary-color: #5EDCD4;
-            --accent-1: #FFF67D;
-            --accent-2: #A5F1E3;
-            --text-color: #FFFFFF;
-            --bg-color: #2F3542;
-            --card-bg: #3D4558;
-        }
-
-        body {
-            font-family: 'Nunito', sans-serif;
-            background: linear-gradient(135deg, var(--bg-color) 0%, var(--accent-3) 100%);
-            color: var(--text-color);
-            min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-
-        .container {
-            padding: 0 15px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Card styles */
-        .card {
-            border-radius: 15px;
-            border: 2px solid var(--accent-1);
-            background-color: var(--card-bg);
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            height: 100%;
-        }
-
-        .card-title {
-            color: var(--text-color);
-            font-size: 1.4rem;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* Theme switch */
-        .theme-switch {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: var(--card-bg);
-            border: 2px solid var(--accent-1);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        /* Skeleton loader */
-        .skeleton {
-            background: linear-gradient(90deg, var(--card-bg) 25%, var(--accent-3) 50%, var(--card-bg) 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            height: 200px;
-            border-radius: 15px 15px 0 0;
-        }
-
-        .skeleton-text {
-            height: 24px;
-            margin: 10px 0;
-            border-radius: 4px;
-        }
-
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
+        /* Critical CSS code here */
     </style>
 
     <!-- Deferred CSS loading -->
@@ -123,9 +35,53 @@
     <div class="floating-element star3">✨</div>
 </div>
 
-<button onclick="toggleTheme()" class="btn theme-switch">
-    <i class="fas fa-moon" id="themeIcon"></i>
-</button>
+<!-- Hamburger Menu -->
+<div class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+        <!-- User info if logged in -->
+        <li sec:authorize="isAuthenticated()">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name" sec:authentication="name">User</div>
+            </div>
+        </li>
+
+        <!-- Login/Logout option -->
+        <li sec:authorize="!isAuthenticated()">
+            <a href="/login">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+            <a href="/logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
+
+        <!-- Theme toggle -->
+        <li>
+            <a href="javascript:void(0)" onclick="toggleThemeFromSidebar()">
+                <i class="fas fa-moon" id="sidebarThemeIcon"></i> Change Theme
+            </a>
+        </li>
+
+        <!-- Admin menu option -->
+        <li sec:authorize="isAuthenticated()">
+            <a href="/admin">
+                <i class="fas fa-shield-alt"></i> Admin Menu
+            </a>
+        </li>
+    </ul>
+</div>
+<!-- Overlay for closing sidebar -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div class="container mt-5">
     <div class="stories-header">
@@ -151,6 +107,10 @@
 
             <!-- Actual content (initially hidden) -->
             <div class="card h-100 story-content" style="display:none;">
+                <!-- Unread indicator for logged-in users -->
+                <div th:if="${unreadStories != null && unreadStories.contains(story.id)}"
+                     class="unread-indicator" title="New story - you haven't read this yet"></div>
+
                 <!-- Clickable cover image -->
                 <a th:href="@{/stories/view/{id}(id=${story.id})}" class="card-image-link">
                     <img th:if="${story.hasCoverImage}" th:src="@{/stories/cover/{id}(id=${story.id})}"
@@ -234,5 +194,6 @@
 
 <!-- Optimized JS loading -->
 <script th:src="@{/js/main.js}" defer></script>
+<script th:src="@{/js/sidebar.js}" defer></script>
 </body>
 </html>

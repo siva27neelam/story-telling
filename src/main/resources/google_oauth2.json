@@ -1,0 +1,16 @@
+{
+  "web": {
+    "client_id": "835286901246-dtbsjmi9l97t2fhprtujj8qr2u585k4o.apps.googleusercontent.com",
+    "project_id": "gen-lang-client-0147755752",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "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",
+    "redirect_uris": [
+      "https://stories.havish.co.in"
+    ],
+    "javascript_origins": [
+      "https://stories.havish.co.in"
+    ]
+  }
+}
