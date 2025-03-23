@@ -15,6 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,9 @@ public class StoryService {
             });
         }
 
+        story.setStatus(Story.StoryStatus.DRAFT);
+        //story.setChangedBy(currentUser.getUsername());
+        story.setSubmittedForApprovalAt(LocalDateTime.now());
         // Save the story first to get IDs
         Story savedStory = storyRepository.save(story);
 
@@ -54,6 +59,9 @@ public class StoryService {
         // Update basic story properties
         existingStory.setTitle(updatedStory.getTitle());
         existingStory.setTags(updatedStory.getTags());
+        existingStory.setStatus(Story.StoryStatus.DRAFT);
+        //existingStory.setChangedBy(currentUser.getUsername());
+        existingStory.setSubmittedForApprovalAt(LocalDateTime.now());
 
         // Update cover image if provided
         if (updatedStory.getCoverImage() != null) {
@@ -151,6 +159,10 @@ public class StoryService {
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
     public void deleteStory(Long id) {
+
+//        story.setStatus(StoryStatus.ARCHIVED);
+//        story.setChangedBy(currentUser.getUsername());
+//        story.setSubmittedForApprovalAt(LocalDateTime.now());
         storyRepository.deleteById(id);
     }
 }

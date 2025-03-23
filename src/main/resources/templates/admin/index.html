@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- Add the security namespace at the top of your HTML file -->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
@@ -10,126 +9,171 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/custom4.css}" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
     <!-- Add Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<!-- Include the common sidebar/hamburger menu -->
-<div class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
-    <i class="fas fa-bars"></i>
-</div>
-
-<div class="sidebar" id="sidebar">
-    <ul class="sidebar-menu">
-        <!-- User info if logged in -->
-        <li sec:authorize="isAuthenticated()">
-            <div class="user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-name" sec:authentication="name">User</div>
+<!-- Header -->
+<header class="main-header">
+    <div class="container-fluid">
+        <div class="header-content">
+            <div class="logo-container">
+                <h1 class="site-title">Admin Dashboard</h1>
             </div>
-        </li>
-
-        <!-- Login/Logout option -->
-        <li sec:authorize="!isAuthenticated()">
-            <a href="/login">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
-        </li>
-        <li sec:authorize="isAuthenticated()">
-            <a href="/logout">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </li>
-
-        <!-- Theme toggle -->
-        <li>
-            <a href="javascript:void(0)" onclick="toggleThemeFromSidebar()">
-                <i class="fas fa-moon" id="sidebarThemeIcon"></i> Change Theme
-            </a>
-        </li>
-
-        <!-- Admin menu option -->
-        <li sec:authorize="isAuthenticated()">
-            <a href="/admin">
-                <i class="fas fa-shield-alt"></i> Admin Menu
-            </a>
-        </li>
-    </ul>
-</div>
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-12">
-            <div class="story-container">
-                <h2 class="mb-4">Admin Dashboard</h2>
-
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i> Welcome to the admin dashboard. Here you can monitor user engagement and story analytics.
+            <div class="user-menu">
+                    <span class="greeting" th:if="${session.currentUser != null}">
+                        Hi, <span th:text="${session.currentUser.firstName}">User</span>
+                    </span>
+                <div class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
                 </div>
+            </div>
+        </div>
+    </div>
+</header>
 
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Total Users</h5>
-                                <p class="display-4" th:text="${metrics.totalUsers}">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Active Today</h5>
-                                <p class="display-4" th:text="${metrics.activeTodayUsers}">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Total Stories</h5>
-                                <p class="display-4" th:text="${metrics.totalStories}">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Avg. Session</h5>
-                                <p class="display-4"><span th:text="${#numbers.formatDecimal(metrics.avgSessionDuration / 60, 0, 1)}">0</span> min</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<div class="admin-container">
+    <!-- Admin Sidebar -->
+    <div class="admin-sidebar">
+        <ul class="admin-nav">
+            <li class="admin-nav-item active">
+                <a href="#overview" onclick="activateTab('overview')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Overview</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="#users" onclick="activateTab('users')">
+                    <i class="fas fa-users"></i>
+                    <span>User Management</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="#stories" onclick="activateTab('stories')">
+                    <i class="fas fa-book"></i>
+                    <span>Story Analytics</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="#engagement" onclick="activateTab('engagement')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Engagement Metrics</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="#settings" onclick="activateTab('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/stories">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Stories</span>
+                </a>
+            </li>
+        </ul>
+    </div>
 
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Popular Stories</h5>
-                                <canvas id="popularStoriesChart"></canvas>
+    <!-- Main Content Area -->
+    <div class="admin-content">
+        <!-- Overview Section -->
+        <div id="overview" class="admin-section active">
+            <h2>Dashboard Overview</h2>
+
+            <div class="row mb-4">
+                <!-- Stats Cards -->
+                <div class="col-md-3">
+                    <div class="admin-card">
+                        <div class="admin-card-body">
+                            <div class="admin-card-icon">
+                                <i class="fas fa-users"></i>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">User Activity</h5>
-                                <canvas id="userActivityChart"></canvas>
+                            <div class="admin-card-info">
+                                <h3>Total Users</h3>
+                                <p class="admin-card-value" th:text="${metrics.totalUsers}">247</p>
                             </div>
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="admin-card">
+                        <div class="admin-card-body">
+                            <div class="admin-card-icon">
+                                <i class="fas fa-user-clock"></i>
+                            </div>
+                            <div class="admin-card-info">
+                                <h3>Active Today</h3>
+                                <p class="admin-card-value" th:text="${metrics.activeTodayUsers}">38</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="admin-card">
+                        <div class="admin-card-body">
+                            <div class="admin-card-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="admin-card-info">
+                                <h3>Total Stories</h3>
+                                <p class="admin-card-value" th:text="${metrics.totalStories}">56</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="admin-card">
+                        <div class="admin-card-body">
+                            <div class="admin-card-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="admin-card-info">
+                                <h3>Avg. Session</h3>
+                                <p class="admin-card-value">
+                                    <span th:text="${#numbers.formatDecimal(metrics.avgSessionDuration / 60, 0, 1)}">7.2</span> min
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Recent User Activities</h5>
-                                <table class="table">
+            <div class="row mb-4">
+                <!-- Charts -->
+                <div class="col-md-6">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>Popular Stories</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <canvas id="popularStoriesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>User Activity</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <canvas id="userActivityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Recent Activities Table -->
+                <div class="col-md-12">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>Recent User Activities</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <div class="table-responsive">
+                                <table class="table admin-table">
                                     <thead>
                                     <tr>
                                         <th>User</th>
@@ -145,7 +189,10 @@
                                     <tr th:each="activity : ${recentActivities}">
                                         <td th:text="${activity.userName}">User Name</td>
                                         <td th:text="${activity.storyTitle}">Story Title</td>
-                                        <td th:text="${activity.activityType}">Read</td>
+                                        <td>
+                                                    <span th:class="${activity.activityType == 'Completed' ? 'badge bg-success' : 'badge bg-primary'}"
+                                                          th:text="${activity.activityType}">Read</span>
+                                        </td>
                                         <td th:text="${#temporals.format(activity.timestamp, 'yyyy-MM-dd HH:mm')}">2023-01-01 12:00</td>
                                     </tr>
                                     </tbody>
@@ -154,16 +201,277 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="d-flex justify-content-end mt-4">
-                    <a th:href="@{/stories}" class="btn btn-primary">
-                        <i class="fas fa-arrow-left me-2"></i> Back to Stories
-                    </a>
+        <!-- User Management Section -->
+        <div id="users" class="admin-section">
+            <h2>User Management</h2>
+            <div class="admin-panel">
+                <div class="admin-panel-header">
+                    <h3>Registered Users</h3>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-table">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Registration Date</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${users == null || users.empty}">
+                                <td colspan="6" class="text-center">No users found</td>
+                            </tr>
+                            <tr th:each="user : ${users}">
+                                <td th:text="${user.id}">1</td>
+                                <td th:text="${user.firstName + ' ' + user.lastName}">John Doe</td>
+                                <td th:text="${user.email}">john@example.com</td>
+                                <td th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd')}">2023-01-01</td>
+                                <td th:text="${#temporals.format(user.lastLoggedInAt, 'yyyy-MM-dd HH:mm')}">2023-01-01 12:00</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary">View</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Story Analytics Section -->
+        <div id="stories" class="admin-section">
+            <h2>Story Analytics</h2>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>Most Read Stories</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <canvas id="mostReadChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>Story Completion Rate</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <canvas id="completionRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-panel">
+                <div class="admin-panel-header">
+                    <h3>Stories Overview</h3>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-table">
+                            <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Pages</th>
+                                <th>Questions</th>
+                                <th>Reads</th>
+                                <th>Completion Rate</th>
+                                <th>Avg. Time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${storyAnalytics == null || storyAnalytics.empty}">
+                                <td colspan="6" class="text-center">No story analytics found</td>
+                            </tr>
+                            <tr th:each="story : ${storyAnalytics}">
+                                <td th:text="${story.title}">Story Title</td>
+                                <td th:text="${story.pageCount}">5</td>
+                                <td th:text="${story.questionCount}">10</td>
+                                <td th:text="${story.readCount}">120</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar"
+                                             th:style="'width: ' + ${story.completionRate} + '%'"
+                                             th:text="${story.completionRate + '%'}">75%</div>
+                                    </div>
+                                </td>
+                                <td th:text="${story.averageTimeSpent + ' min'}">5.2 min</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Engagement Metrics Section -->
+        <div id="engagement" class="admin-section">
+            <h2>Engagement Metrics</h2>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>Daily Active Users</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <canvas id="dailyActiveUsersChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>Session Duration Distribution</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <canvas id="sessionDurationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="admin-panel">
+                        <div class="admin-panel-header">
+                            <h3>Question Performance Analytics</h3>
+                        </div>
+                        <div class="admin-panel-body">
+                            <div class="table-responsive">
+                                <table class="table admin-table">
+                                    <thead>
+                                    <tr>
+                                        <th>Story</th>
+                                        <th>Page</th>
+                                        <th>Question</th>
+                                        <th>Attempts</th>
+                                        <th>Correct Rate</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:if="${questionAnalytics == null || questionAnalytics.empty}">
+                                        <td colspan="5" class="text-center">No question analytics found</td>
+                                    </tr>
+                                    <tr th:each="question : ${questionAnalytics}">
+                                        <td th:text="${question.storyTitle}">Story Title</td>
+                                        <td th:text="${question.pageNumber}">3</td>
+                                        <td th:text="${question.text}">Who was the main character?</td>
+                                        <td th:text="${question.attempts}">45</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar" role="progressbar"
+                                                     th:style="'width: ' + ${question.correctRate} + '%'"
+                                                     th:text="${question.correctRate + '%'}">68%</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="admin-section">
+            <h2>Settings</h2>
+
+            <div class="admin-panel">
+                <div class="admin-panel-header">
+                    <h3>System Settings</h3>
+                </div>
+                <div class="admin-panel-body">
+                    <form id="settingsForm">
+                        <div class="mb-3">
+                            <label for="siteTitle" class="form-label">Site Title</label>
+                            <input type="text" class="form-control" id="siteTitle" value="Children's Bedtime Stories">
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactEmail" class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" id="contactEmail" value="info@bedtimestories.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="itemsPerPage" class="form-label">Items Per Page</label>
+                            <select class="form-select" id="itemsPerPage">
+                                <option value="6" selected>6</option>
+                                <option value="9">9</option>
+                                <option value="12">12</option>
+                                <option value="15">15</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="enableRegistration" checked>
+                            <label class="form-check-label" for="enableRegistration">Enable User Registration</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Main site sidebar (for mobile) -->
+<div class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+        <!-- User info if logged in -->
+        <li sec:authorize="isAuthenticated()">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name" th:if="${session.currentUser != null}">
+                    <span th:text="${session.currentUser.firstName + ' ' + session.currentUser.lastName}">User Name</span>
+                </div>
+                <div class="user-name" th:unless="${session.currentUser != null}">
+                    <span sec:authentication="name">User</span>
+                </div>
+            </div>
+        </li>
+
+        <!-- Theme toggle -->
+        <li>
+            <a href="javascript:void(0)" onclick="toggleThemeFromSidebar()">
+                <i class="fas fa-moon" id="sidebarThemeIcon"></i> Change Theme
+            </a>
+        </li>
+
+        <!-- Logout option -->
+        <li sec:authorize="isAuthenticated()">
+            <a href="/logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </li>
+
+        <!-- Back to stories -->
+        <li>
+            <a href="/stories">
+                <i class="fas fa-arrow-left"></i> Back to Stories
+            </a>
+        </li>
+    </ul>
+</div>
+
+<!-- Overlay for closing sidebar -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/sidebar.js}" defer></script>
+<script th:src="@{/js/admin.js}" defer></script>
 
 <!-- Chart initialization scripts -->
 <script th:inline="javascript">
@@ -171,62 +479,9 @@
     const popularStories = /*[[${metrics.storyData}]]*/ [];
     const userActivity = /*[[${metrics.activityData}]]*/ [];
 
-    // Initialize charts when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        // Popular Stories Chart
-        if (document.getElementById('popularStoriesChart')) {
-            const ctx1 = document.getElementById('popularStoriesChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: popularStories.map(story => story.title),
-                    datasets: [{
-                        label: 'Number of Reads',
-                        data: popularStories.map(story => story.readCount),
-                        backgroundColor: 'rgba(164, 90, 82, 0.6)',
-                        borderColor: 'rgba(164, 90, 82, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // User Activity Chart
-        if (document.getElementById('userActivityChart')) {
-            const ctx2 = document.getElementById('userActivityChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: userActivity.map(day => day.date),
-                    datasets: [{
-                        label: 'Active Users',
-                        data: userActivity.map(day => day.activeUsers),
-                        backgroundColor: 'rgba(90, 122, 111, 0.2)',
-                        borderColor: 'rgba(90, 122, 111, 1)',
-                        borderWidth: 2,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
+        initializeCharts();
     });
 </script>
-
-<!-- Include sidebar.js -->
-<script th:src="@{/js/sidebar.js}"></script>
 </body>
 </html>

@@ -53,4 +53,18 @@ public class Story {
 
     @Column(name = "is_cover_compressed")
     private Boolean isCoverCompressed = false;
+
+    @Enumerated(EnumType.STRING)
+    private StoryStatus status = StoryStatus.DRAFT;
+
+    private String changedBy; // User who last changed the story
+    private LocalDateTime submittedForApprovalAt;
+    private String approvedBy;
+    private LocalDateTime approvedAt;
+
+    public enum StoryStatus {
+        DRAFT, // Newly created or edited, pending approval
+        PUBLISHED, // Approved and visible to users
+        ARCHIVED // Soft-deleted, recoverable
+    }
 }
