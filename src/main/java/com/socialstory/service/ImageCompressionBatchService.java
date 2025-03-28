@@ -135,7 +135,7 @@ public class ImageCompressionBatchService {
         } while (!pages.isEmpty());
 
         double spaceSavedMB = spaceSavedBytes / (1024.0 * 1024.0);
-        log.info("Image compression job completed: {} cover images compressed, {} page images compressed, {:.2f} MB saved",
+        log.info("Image compression job completed: {} cover images compressed, {} page images compressed, {} MB saved",
                 coverImagesCompressed, pageImagesCompressed, spaceSavedMB);
     }
 
