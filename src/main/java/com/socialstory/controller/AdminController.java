@@ -1,7 +1,9 @@
 package com.socialstory.controller;
 
+import com.socialstory.service.UserAdminService;
 import com.socialstory.service.UserService;
 import com.socialstory.service.StoryService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,9 +25,15 @@ public class AdminController {
 
     private final UserService userService;
     private final StoryService storyService;
+    private final UserAdminService userAdminService;
 
     @GetMapping
-    public String adminDashboard(Model model) {
+    public String adminDashboard(Model model, HttpSession session) {
+        com.socialstory.model.User currentUser = (com.socialstory.model.User) session.getAttribute("currentUser");
+        if (currentUser == null || !userAdminService.isUserAdmin(currentUser.getEmail())) {
+            return "redirect:/stories";
+        }
+
         // Get metrics from user service
         Map<String, Object> metrics = userService.getMetricsForAdminDashboard();
 

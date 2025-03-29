@@ -63,8 +63,9 @@ public class Story {
     private LocalDateTime approvedAt;
 
     public enum StoryStatus {
-        DRAFT, // Newly created or edited, pending approval
-        PUBLISHED, // Approved and visible to users
-        ARCHIVED // Soft-deleted, recoverable
+        DRAFT,        // Created but not submitted
+        PENDING,      // Submitted for approval
+        PUBLISHED,    // Approved and visible
+        ARCHIVED      // Rejected or removed
     }
 }

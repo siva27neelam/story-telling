@@ -8,6 +8,7 @@ import com.socialstory.repository.UserRepository;
 import com.socialstory.repository.UserSessionRepository;
 import com.socialstory.repository.UserStoryInteractionRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,7 @@ public class UserService {
     private final UserStoryInteractionRepository userStoryInteractionRepository;
     private final StoryRepository storyRepository;
     private final HttpServletRequest request;
+    private final UserAdminService userAdminService;
 
     @Transactional
     public User processOAuthUser(OAuth2AuthenticationToken authentication) {
@@ -92,11 +94,13 @@ public class UserService {
         }
 
         user = userRepository.save(user);
-        log.info("Saved user with id={}", user.getId());
+        boolean isAdmin = userAdminService.isUserAdmin(user.getEmail());
+
+        log.info("Saved user with id={}, isAdmin={}", user.getId(), isAdmin);
         return user;
     }
     @Transactional
-    public UserSession startUserSession(User user) {
+    public UserSession startUserSession(User user, HttpSession httpSession) {
         UserSession session = new UserSession();
         session.setUser(user);
         session.setLoginTime(LocalDateTime.now());
@@ -113,8 +117,10 @@ public class UserService {
             session.setDeviceType("DESKTOP");
         }
 
-        return userSessionRepository.save(session);
-    }
+        boolean isAdmin = userAdminService.isUserAdmin(user.getEmail());
+        httpSession.setAttribute("isAdmin", isAdmin);
+
+        return userSessionRepository.save(session);    }
 
     @Transactional
     public void endUserSession(UserSession session) {

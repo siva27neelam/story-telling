@@ -165,7 +165,8 @@
                     </div>
 
                     <!-- Edit button as an icon -->
-                    <div class="edit-link">
+                    <div class="edit-link"
+                         th:if="${session.currentUser != null && (session.isAdmin == true || story.changedBy == session.currentUser.email)}">
                         <a th:href="@{/stories/edit/{id}(id=${story.id})}" title="Edit Story">
                             <i class="fas fa-edit"></i>
                         </a>

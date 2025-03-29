@@ -1,10 +1,8 @@
 // StoryService.java - Updated to handle all fields
 package com.socialstory.service;
 
-import com.socialstory.dto.StoryListDTO;
-import com.socialstory.model.Question;
-import com.socialstory.model.Story;
-import com.socialstory.model.StoryPage;
+import com.socialstory.model.*;
+import com.socialstory.repository.StoryArchiveRepository;
 import com.socialstory.repository.StoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -29,6 +27,7 @@ public class StoryService {
 
     private final StoryRepository storyRepository;
     private final QuestionService questionService;
+    private final StoryArchiveRepository storyArchiveRepository;
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
     public Story createStory(Story story) {
@@ -110,13 +109,6 @@ public class StoryService {
         return savedStory;
     }
 
-    // Updated method with caching
-    @Cacheable(value = "storiesPageCache", key = "#page + '-' + #size")
-    public Page<StoryListDTO> getStoriesPage(int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return storyRepository.findAllStoriesForList(pageRequest);
-    }
-
     // Original method for backward compatibility
     public Page<Story> getFullStoriesPage(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
@@ -159,10 +151,58 @@ public class StoryService {
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
     public void deleteStory(Long id) {
-
-//        story.setStatus(StoryStatus.ARCHIVED);
-//        story.setChangedBy(currentUser.getUsername());
-//        story.setSubmittedForApprovalAt(LocalDateTime.now());
         storyRepository.deleteById(id);
+    }
+
+    @Transactional
+    public Story submitForApproval(Long storyId) {
+        Story story = getStoryById(storyId);
+        story.setStatus(Story.StoryStatus.PENDING);
+        story.setSubmittedForApprovalAt(LocalDateTime.now());
+        return storyRepository.save(story);
+    }
+
+    @Transactional
+    public Story approveStory(Long storyId, String approverEmail) {
+        Story story = getStoryById(storyId);
+        story.setStatus(Story.StoryStatus.PUBLISHED);
+        story.setApprovedBy(approverEmail);
+        story.setApprovedAt(LocalDateTime.now());
+        return storyRepository.save(story);
+    }
+
+    @Transactional
+    public void rejectStory(Long storyId, String rejectorEmail, String reason) {
+        Story story = getStoryById(storyId);
+
+        // Create archive record
+        StoryArchive archive = new StoryArchive();
+        archive.setOriginalStoryId(story.getId());
+        archive.setTitle(story.getTitle());
+        // Copy other relevant fields
+        archive.setCreatedAt(story.getCreatedAt());
+        archive.setSubmittedAt(story.getSubmittedForApprovalAt());
+        archive.setRejectedAt(LocalDateTime.now());
+        archive.setRejectedBy(rejectorEmail);
+        archive.setRejectionReason(reason);
+
+        storyArchiveRepository.save(archive);
+
+        // Either delete or mark as archived
+        story.setStatus(Story.StoryStatus.ARCHIVED);
+        storyRepository.save(story);
+    }
+
+    // In getStoriesPage method - update to only get PUBLISHED stories
+    @Cacheable(value = "storiesPageCache", key = "#page + '-' + #size")
+    public Page<StoryListDTO> getStoriesPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return storyRepository.findAllPublishedStoriesForList(pageRequest);
+    }
+
+    // New method to get pending stories
+    public Page<StoryListDTO> getPendingStoriesPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("submittedForApprovalAt").descending());
+        return storyRepository.findPendingStoriesForList(pageRequest);
     }
 }

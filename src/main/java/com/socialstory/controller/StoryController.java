@@ -1,11 +1,11 @@
 // StoryController.java - Updated to use DTOs for the list page
 package com.socialstory.controller;
 
-import com.socialstory.dto.StoryListDTO;
 import com.socialstory.model.*;
 import com.socialstory.service.QuestionService;
 import com.socialstory.service.StoryService;
 import com.socialstory.repository.StoryPageRepository;
+import com.socialstory.service.UserAdminService;
 import com.socialstory.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +32,7 @@ public class StoryController {
     private final StoryPageRepository storyPageRepository;
     private final QuestionService questionService;
     private final UserService userService;
+    private final UserAdminService userAdminService;
 
     @GetMapping
     public String listStories(
@@ -71,7 +72,7 @@ public class StoryController {
     public String createStory(@ModelAttribute Story story,
                               @RequestParam(value = "imageFile", required = false) List<MultipartFile> images,
                               @RequestParam(value = "coverImageFile", required = false) MultipartFile coverImageFile,
-                              RedirectAttributes redirectAttributes) {
+                              RedirectAttributes redirectAttributes, HttpSession session) {
         // Initialize pages list if null
         if (story.getPages() == null) {
             story.setPages(new ArrayList<>());
@@ -102,11 +103,37 @@ public class StoryController {
             }
         }
 
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            story.setChangedBy(currentUser.getEmail());
+        }
+
+        story.setStatus(Story.StoryStatus.DRAFT);
+
+
         // Save the story (service handles questions)
         storyService.createStory(story);
-        redirectAttributes.addFlashAttribute("message", "Story created successfully!");
+        redirectAttributes.addFlashAttribute("message", "Story created successfully and submitted for approval!");
         return "redirect:/stories";
     }
+
+    @PostMapping("/submit/{id}")
+    public String submitForApproval(@PathVariable Long id,
+                                    RedirectAttributes redirectAttributes,
+                                    HttpSession session) {
+        Story story = storyService.getStoryById(id);
+
+        // Set user information
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            story.setChangedBy(currentUser.getEmail());
+        }
+
+        storyService.submitForApproval(id);
+        redirectAttributes.addFlashAttribute("message", "Story submitted for approval!");
+        return "redirect:/stories";
+    }
+
 
     @GetMapping("/view/{id}")
     public String viewStory(@PathVariable Long id, Model model, HttpSession session) {
@@ -149,7 +176,14 @@ public class StoryController {
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
+    public String showEditForm(@PathVariable Long id, Model model, HttpSession session) {
+        // Get current user
+        User currentUser = (User) session.getAttribute("currentUser");
+
+        // Check if user is admin
+        boolean isAdmin = currentUser != null && userAdminService.isUserAdmin(currentUser.getEmail());
+        model.addAttribute("isAdmin", isAdmin);
+
         Story story = storyService.getStoryById(id);
         model.addAttribute("story", story);
 
@@ -223,7 +257,19 @@ public class StoryController {
     }
 
     @GetMapping("/delete/{id}")
-    public String deleteStory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteStory(@PathVariable Long id, RedirectAttributes redirectAttributes, HttpSession session) {
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        // Check if user is admin
+        if (!userAdminService.isUserAdmin(currentUser.getEmail())) {
+            redirectAttributes.addFlashAttribute("error", "You don't have permission to delete stories.");
+            return "redirect:/stories";
+        }
+
         storyService.deleteStory(id);
         redirectAttributes.addFlashAttribute("message", "Story deleted successfully!");
         return "redirect:/stories";

@@ -60,13 +60,13 @@ public class SecurityConfig {
             @Override
             public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                                 Authentication authentication) throws IOException, ServletException {
-                if (authentication instanceof OAuth2AuthenticationToken) {
-                    OAuth2AuthenticationToken oauth2Auth = (OAuth2AuthenticationToken) authentication;
+                if (authentication instanceof OAuth2AuthenticationToken oauth2Auth) {
                     User user = userService.processOAuthUser(oauth2Auth);
 
                     // Store user and session info in the HTTP session for quick access
                     HttpSession session = request.getSession();
-                    UserSession userSession = userService.startUserSession(user);
+
+                    UserSession userSession = userService.startUserSession(user, session);
                     session.setAttribute("currentUser", user);
                     session.setAttribute("currentSession", userSession);
                 }
