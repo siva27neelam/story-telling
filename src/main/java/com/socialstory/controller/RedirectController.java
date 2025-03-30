@@ -9,4 +9,9 @@ public class RedirectController {
     public String redirectToStories() {
         return "redirect:/stories";
     }
+
+    @GetMapping("/about")
+    public String aboutPage() {
+        return "about"; // This will use about.html template
+    }
 }

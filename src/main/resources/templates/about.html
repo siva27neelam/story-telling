@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>About SleepyTales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/custom4.css}" rel="stylesheet">
+</head>
+<body>
+<!-- Include Header Fragment -->
+<div th:replace="fragments/common :: header"></div>
+
+<!-- Include Sidebar Fragment -->
+<div th:replace="fragments/common :: sidebar"></div>
+
+<!-- About content -->
+<div class="container mt-5">
+    <div class="story-container">
+        <h2 class="mb-4">About SleepyTales</h2>
+
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <h3>Our Mission</h3>
+                <p class="fs-5">SleepyTales is a community-driven platform dedicated to celebrating the art of storytelling through collaboration. We believe that stories have the power to educate, inspire, and transform—and that the richest narratives emerge when diverse voices come together to share their unique perspectives.</p>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <h3>Our Community</h3>
+                <p>SleepyTales thrives through the contributions of passionate storytellers from around the world:</p>
+                <ul>
+                    <li><strong>Educators</strong> who craft tales with valuable lessons</li>
+                    <li><strong>Parents</strong> sharing stories that have captivated their own children</li>
+                    <li><strong>Aspiring authors</strong> developing their narrative craft</li>
+                    <li><strong>Illustrators</strong> bringing stories to life through visual art</li>
+                    <li><strong>Professional writers</strong> contributing their expertise</li>
+                    <li><strong>Cultural storytellers</strong> preserving important traditions and folktales</li>
+                </ul>
+                <p>Every story undergoes thoughtful review by our community moderators to ensure quality, appropriate content that aligns with our values of inspiration, education, and imagination.</p>
+            </div>
+            <div class="col-md-6">
+                <h3>How SleepyTales Works</h3>
+                <div class="card-about mb-3">
+                    <div class="card-body">
+                        <h5><i class="fas fa-pencil-alt"></i> Create</h5>
+                        <p>Write your story, add images, and craft interactive questions that engage readers and enhance comprehension. Our intuitive story editor makes it easy for creators of all experience levels.</p>
+                    </div>
+                </div>
+                <div class="card-about mb-3">
+                    <div class="card-body">
+                        <h5><i class="fas fa-paper-plane"></i> Submit</h5>
+                        <p>Share your creation with our community moderation team. Our collaborative approach ensures stories are engaging, appropriate, and aligned with our community values.</p>
+                    </div>
+                </div>
+                <div class="card-about mb-3">
+                    <div class="card-body">
+                        <h5><i class="fas fa-book-open"></i> Publish</h5>
+                        <p>Once approved, your story becomes available in our community library, where readers worldwide can discover, enjoy, and interact with your creation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <h3>Our Core Values</h3>
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-lightbulb text-warning"></i> Creativity</h5>
+                                <p class="card-text">We celebrate imagination and original thinking. SleepyTales provides tools and a platform for creative expression, encouraging storytellers to explore new ideas and narrative approaches.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-users text-primary"></i> Community</h5>
+                                <p class="card-text">We believe in the power of collective creativity. Our collaborative environment fosters supportive connections between storytellers, readers, educators, and story enthusiasts.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-book-reader text-success"></i> Education</h5>
+                                <p class="card-text">Stories can be powerful teaching tools. We emphasize narratives that engage readers while imparting valuable knowledge, social-emotional skills, and cultural understanding.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-globe-americas text-info"></i> Inclusivity</h5>
+                                <p class="card-text">We welcome diverse voices, perspectives, and storytelling traditions from around the world. Our platform aims to represent the rich tapestry of human experience through stories that resonate across cultures.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-shield-alt text-secondary"></i> Safety</h5>
+                                <p class="card-text">We maintain a secure environment where all content is carefully reviewed. Our moderation process ensures that stories are appropriate and uphold our community standards.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-heart text-danger"></i> Empathy</h5>
+                                <p class="card-text">Stories help us understand different perspectives and experiences. We value narratives that cultivate empathy, compassion, and emotional intelligence in readers of all ages.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <h3>Community Guidelines</h3>
+                <p>To maintain a positive and enriching environment, we ask all contributors to follow these guidelines:</p>
+                <ol>
+                    <li><strong>Quality Content:</strong> Stories should be well-crafted with attention to narrative flow, character development, and engaging elements that captivate readers.</li>
+                    <li><strong>Positive Values:</strong> Content should promote values such as empathy, kindness, curiosity, resilience, and respect for diversity.</li>
+                    <li><strong>Inclusive Representation:</strong> We encourage diverse characters and perspectives that authentically reflect our global community.</li>
+                    <li><strong>Educational Merit:</strong> The best stories not only entertain but also teach valuable lessons or inspire curiosity about the world.</li>
+                    <li><strong>Original Content:</strong> All submissions should be original work or properly attributed if adapting traditional tales in the public domain.</li>
+                    <li><strong>Constructive Feedback:</strong> When interacting with other community members, provide thoughtful, respectful feedback that helps improve storytelling craft.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <h3>Our Impact</h3>
+                <p>SleepyTales's community-driven approach creates meaningful impact in several ways:</p>
+                <div class="row text-center">
+                    <div class="col-md-4 mb-4">
+                        <div class="impact-stat">
+                            <i class="fas fa-book fa-3x mb-3 text-primary"></i>
+                            <h4>Literacy Promotion</h4>
+                            <p>Our interactive stories encourage reading engagement and comprehension through immersive narratives and thoughtful questions.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="impact-stat">
+                            <i class="fas fa-pencil-alt fa-3x mb-3 text-primary"></i>
+                            <h4>Author Development</h4>
+                            <p>We provide a supportive platform for emerging writers to develop their craft, receive feedback, and build an audience for their work.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="impact-stat">
+                            <i class="fas fa-child fa-3x mb-3 text-primary"></i>
+                            <h4>Cultural Exchange</h4>
+                            <p>Our global community shares stories that celebrate diverse traditions, fostering cross-cultural understanding and appreciation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <h3>Join Our Community</h3>
+                <p class="fs-5">Ready to share your stories with the world? Sign in with your Google account to start creating. Your voice matters, and we can't wait to see the unique perspectives you'll contribute to our growing library of community-crafted tales.</p>
+                <div class="text-center mt-4" sec:authorize="!isAuthenticated()">
+                    <a href="/login" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i> Join SleepyTales
+                    </a>
+                </div>
+                <div class="text-center mt-4" sec:authorize="isAuthenticated()">
+                    <a href="/stories/create" class="btn btn-primary btn-lg">
+                        <i class="fas fa-pencil-alt me-2"></i> Create Your Story
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <a href="/stories" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Stories
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Footer Fragment -->
+<div th:replace="fragments/common :: footer"></div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

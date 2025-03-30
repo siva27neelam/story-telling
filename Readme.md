@@ -34,3 +34,23 @@ Cloudflare tunnels for exposing local network to internet.
 9. Use zoho to configure the email
 
 
+Start with the art style specification:
+"Create a vintage 1950s children's book illustration with bold black outlines, flat colors without shading, and the characteristic hand-painted print aesthetic with slight registration misalignments typical of mid-century children's books."
+Describe the scene composition clearly:
+"The image should show [subject] positioned [location] within a [setting]. The background should include [specific elements]."
+Provide exact character details:
+"The main character should be a [species] with [specific physical traits] wearing [specific clothing items with colors]. Their expression should show [emotion]."
+Specify colors explicitly:
+"Use a palette of [specific colors listed] with [primary color] as the dominant tone."
+Include text elements if needed:
+"Include a speech bubble saying: '[exact text]' positioned near [character's] mouth."
+Maintain consistency with previous illustrations:
+"This character should match their appearance in previous illustrations: [list defining characteristics again]."
+Describe lighting and mood:
+"The scene should be lit by [light source] creating a [specific mood] atmosphere."
+Keep cultural elements authentic:
+"Include culturally accurate details such as [specific architectural elements, clothing styles, or environmental features]."
+Avoid ambiguity with measurements:
+"The character should be [specific size relationship] compared to [other element]."
+End with the purpose of the illustration:
+"This illustration should convey [specific emotion or story point] to the viewer."
