@@ -12,6 +12,28 @@ and a hand-painted print aesthetic with a heading Thirsty Crow
 "muted tones," "uncluttered composition," and "whimsical details,"
 the prompt guides the AI to replicate the 1950s children's book style more accurately.
 
+Backup data::
+docker exec mysql-container mysqldump -u root -pJuno@9091 --single-transaction --quick --lock-tables=false havidb > /media/exthd1/mysqlbackup/havidb$(date +%Y%m%d_%H%M%S).sql
+restore data:
+cat /media/exthd1/mysqlbackup/havidb20250331_200459.sql | docker exec -i mariadb-container mariadb -u root -pJuno@9091 havidb
+
+
+docker run -d --name mariadb-container \
+  -e MYSQL_ROOT_PASSWORD=Juno@9091 \
+  -e MYSQL_DATABASE=havidb \
+  -v /media/exthd1/mariadb:/var/lib/mysql \
+  -p 3307:3306 \
+  -d mariadb:latest
+
+  CREATE USER 'havi'@'%' IDENTIFIED BY 'Juno@9091';
+  GRANT ALL PRIVILEGES ON *.* TO 'havi'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+ GRANT ALL PRIVILEGES ON *.* TO 'havi'@'%' IDENTIFIED BY 'Juno@9091' WITH GRANT OPTION;
+
+
+/media/devmon/sda1-ata-TOSHIBA_MQ01ABD1/havi
+
 gradle clean build
 docker login -u siva27neelam
 docker build -t siva27neelam/story-telling:latest -t siva27neelam/story-telling:4.0.0 .

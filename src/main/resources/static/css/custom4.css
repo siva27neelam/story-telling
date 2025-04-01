@@ -516,6 +516,23 @@ h2 {
     transition: all 0.3s ease;
 }
 
+.page-turn-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    pointer-events: none;
+    display: none;
+}
+
+.page-turn-fold {
+    position: absolute;
+    background-color: var(--page-color, #f0f0f0);
+    transform-origin: top left;
+}
+
 .card:hover {
     transform: translateY(-10px);
     border-color: var(--primary-color);
