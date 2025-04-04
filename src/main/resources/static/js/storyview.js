@@ -1,425 +1,298 @@
-// Global variables for speech synthesis
+// Global variables for story interaction
+let currentPageIndex = 0;
+let totalPagesCount = 0;
 let isSpeaking = false;
-let speechSynthVoices = [];
+let speechSynthesisInstance = null;
 let wordElements = [];
 let currentWordIndex = 0;
-let readingInterval = null;
-let utterance = null;
-let averageWordDuration = 250; // milliseconds per word
 
 /**
- * Initialize speech synthesis with voice loading
+ * Initialize the story view when DOM is loaded
  */
-function initSpeechSynthesis() {
-  console.log("Initializing speech synthesis");
-  // Try to get voices immediately
-  speechSynthVoices = window.speechSynthesis.getVoices();
-  console.log("Initial voices:", speechSynthVoices.length);
+document.addEventListener('DOMContentLoaded', () => {
+    // Set theme from localStorage
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const icon = document.getElementById('themeIcon');
 
-  // Set up event listener for when voices change/load
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = () => {
-      speechSynthVoices = window.speechSynthesis.getVoices();
-      console.log('Voices loaded:', speechSynthVoices.length);
-    };
-  }
+    if (savedTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        icon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    // Set total pages from global variable
+    totalPagesCount = typeof totalPages !== 'undefined' ? totalPages :
+        document.querySelectorAll('.story-page').length;
+
+    // Initialize first page with animation
+    showPage(0);
+
+    // Add interaction tracking if logged in
+    trackPageInteraction();
+
+    // Check speech synthesis support
+    if (!('speechSynthesis' in window)) {
+        const readBtn = document.getElementById('readBtn');
+        if (readBtn) {
+            readBtn.style.display = 'none';
+        }
+    }
+
+    // Add keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') nextPage();
+        if (e.key === 'ArrowLeft') previousPage();
+        if (e.key === ' ') {
+            e.preventDefault();
+            toggleReadAloud();
+        }
+        if (e.key === 'q') {
+            if (typeof showQuestions === 'function') {
+                showQuestions();
+            }
+        }
+    });
+});
+
+/**
+ * Track page interaction for logged-in users
+ */
+function trackPageInteraction() {
+    const interactionData = document.getElementById('interactionData');
+    if (interactionData) {
+        const interactionId = interactionData.dataset.interactionId;
+
+        // Track time spent
+        let startTime = Date.now();
+
+        window.addEventListener('beforeunload', () => {
+            const timeSpent = Math.round((Date.now() - startTime) / 1000);
+
+            // Send time spent to server
+            fetch(`/api/interactions/${interactionId}/time`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ seconds: timeSpent })
+            });
+        });
+    }
 }
 
 /**
- * Split text into words for reading
- * @param {string} text - The text to split into words
- * @return {string[]} Array of words
+ * Show a specific page by index
+ * @param {number} index - The index of the page to show
  */
-function splitTextIntoWords(text) {
-  // Match words including attached punctuation
-  const words = text.match(/\S+\s*/g) || [];
-  console.log(`Split text into ${words.length} words`);
-  return words;
+function showPage(index) {
+    // Hide all pages
+    document.querySelectorAll('.story-page').forEach(page => {
+        page.classList.remove('active');
+    });
+
+    // Show the selected page
+    const pageElement = document.getElementById('page-' + index);
+    pageElement.classList.add('active');
+
+    // Stop any ongoing reading
+    stopReading();
+
+    // Update navigation buttons
+    document.getElementById('prevBtn').disabled = index === 0;
+    document.getElementById('nextBtn').style.display = index === totalPagesCount - 1 ? 'none' : 'inline-block';
+    document.getElementById('exitBtn').style.display = index === totalPagesCount - 1 ? 'inline-block' : 'none';
+
+    // Update page indicator and progress bar
+    document.getElementById('currentPage').textContent = index + 1;
+    updateProgressBar(index);
+
+    // Trigger any page-specific actions
+    currentPageIndex = index;
 }
 
 /**
- * Configure the voice to sound as natural as possible
- * @param {SpeechSynthesisUtterance} utterance - The utterance to configure
+ * Update progress bar based on current page
+ * @param {number} index - Current page index
  */
-function configureVoice(utterance) {
-  // Create a ranked list of preferred voices
-  const preferredVoicePatterns = [
-    /Google US English/i,
-    /Microsoft Zira/i,
-    /Daniel/i,
-    /Samantha/i,
-    /Karen/i,
-    /English/i
-  ];
+function updateProgressBar(index) {
+    const progressFill = document.getElementById('progressFill');
+    const progressPercentage = ((index + 1) / totalPagesCount) * 100;
+    progressFill.style.width = progressPercentage + '%';
+}
 
-  // Find the best available voice
-  let selectedVoice = null;
-  for (const pattern of preferredVoicePatterns) {
-    selectedVoice = speechSynthVoices.find(voice => pattern.test(voice.name));
-    if (selectedVoice) break;
-  }
+/**
+ * Go to the next page
+ */
+function nextPage() {
+    if (currentPageIndex < totalPagesCount - 1) {
+        showPage(currentPageIndex + 1);
+    }
+}
 
-  // If we found a decent voice, use it
-  if (selectedVoice) {
-    console.log("Using voice:", selectedVoice.name);
-    utterance.voice = selectedVoice;
-  } else {
-    console.log("No preferred voice found, using default");
-  }
-
-  // Adjust parameters for more natural speech
-  utterance.rate = 0.9;     // Slightly slower than default
-  utterance.pitch = 1.0;    // Natural pitch
-  utterance.volume = 1.0;   // Full volume
+/**
+ * Go to the previous page
+ */
+function previousPage() {
+    if (currentPageIndex > 0) {
+        showPage(currentPageIndex - 1);
+    }
 }
 
 /**
  * Prepare text for highlighting by wrapping words in spans
  * @param {HTMLElement} pageElement - The current page element
- * @return {string[]} Array of words
  */
 function prepareTextForHighlighting(pageElement) {
-  console.log("Preparing text for highlighting");
-  const textElement = pageElement.querySelector('.story-text');
-  if (!textElement) {
-    console.error("Story text element not found!");
-    return [];
-  }
-
-  const originalText = textElement.textContent;
-  const words = splitTextIntoWords(originalText);
-
-  // Clear and rebuild with spans
-  textElement.innerHTML = '';
-
-  words.forEach((word, index) => {
-    const span = document.createElement('span');
-    span.className = 'word';
-    span.setAttribute('data-index', index);
-    span.textContent = word;
-    textElement.appendChild(span);
-  });
-
-  console.log(`Created ${words.length} word span elements`);
-  return words;
-}
-
-/**
- * Estimate reading time per word based on word complexity
- * @param {string} word - The word to analyze
- * @return {number} Estimated reading time in milliseconds
- */
-function estimateWordReadingTime(word) {
-  // Strip spaces and punctuation for length calculation
-  const stripped = word.replace(/[^\w]/g, '');
-
-  // Base time per word
-  let time = averageWordDuration;
-
-  // Adjust time based on word length
-  if (stripped.length > 8) {
-    time += 100; // Longer words take more time
-  } else if (stripped.length <= 2) {
-    time -= 50; // Very short words take less time
-  }
-
-  // Adjust for punctuation
-  if (word.includes('.') || word.includes('!') || word.includes('?')) {
-    time += 200; // Pause at end of sentences
-  } else if (word.includes(',') || word.includes(';') || word.includes(':')) {
-    time += 100; // Smaller pause for other punctuation
-  }
-
-  return time;
-}
-
-/**
- * Start highlighting words as they would be read, with estimated timing
- */
-function startWordHighlighting() {
-  console.log("Starting word highlighting");
-  // Reset highlighting
-  currentWordIndex = 0;
-
-  // Get all word elements
-  wordElements = document.querySelectorAll('.word');
-  console.log(`Found ${wordElements.length} word elements`);
-
-  // Clear any existing intervals
-  if (readingInterval) {
-    clearInterval(readingInterval);
-    readingInterval = null;
-  }
-
-  // Calculate total text length for timing estimation
-  const totalWords = wordElements.length;
-  const utteranceText = Array.from(wordElements).map(el => el.textContent).join('');
-
-  // Estimate total speech duration based on text length and speaking rate
-  // This is very approximate and varies by browser/voice
-  const totalCharacters = utteranceText.length;
-  const estimatedTotalDuration = (totalCharacters / 15) * 1000; // ~15 chars per second
-  averageWordDuration = estimatedTotalDuration / totalWords;
-
-  console.log(`Estimated total duration: ${estimatedTotalDuration}ms, average word: ${averageWordDuration}ms`);
-
-  // Function to highlight next word
-  function highlightNextWord() {
-    // Remove highlighting from all words
-    wordElements.forEach(el => el.classList.remove('highlight'));
-
-    // If we've reached the end, stop highlighting
-    if (currentWordIndex >= wordElements.length) {
-      if (readingInterval) {
-        clearTimeout(readingInterval);
-        readingInterval = null;
-      }
-      return;
+    const textElement = pageElement.querySelector('.story-text');
+    if (!textElement) {
+        console.error("Story text element not found!");
+        return [];
     }
 
-    // Highlight current word
-    const currentWord = wordElements[currentWordIndex];
-    currentWord.classList.add('highlight');
+    const originalText = textElement.textContent;
+    const words = originalText.split(/\s+/);
 
-    // Make sure the word is visible
-    currentWord.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-      inline: 'nearest'
+    // Clear and rebuild with spans
+    textElement.innerHTML = '';
+
+    words.forEach((word, index) => {
+        const span = document.createElement('span');
+        span.className = 'word';
+        span.setAttribute('data-index', index);
+        span.textContent = word + ' ';
+        textElement.appendChild(span);
     });
 
-    // Calculate reading time for this word
-    const word = currentWord.textContent;
-    const readTime = estimateWordReadingTime(word);
-
-    // Move to next word after estimated time
-    currentWordIndex++;
-
-    // For smoother reading, use setTimeout instead of interval
-    clearTimeout(readingInterval);
-    readingInterval = setTimeout(highlightNextWord, readTime);
-  }
-
-  // Start the highlighting
-  highlightNextWord();
+    return textElement.querySelectorAll('.word');
 }
 
 /**
- * Start reading the entire page aloud
+ * Start reading the current page
  */
 function startReading() {
-alert("jere")
-  console.log("Starting reading");
-  // Stop any previous reading
-  stopReading();
-
-  // Get current page and prepare text
-  const currentPage = document.querySelector('.story-page.active');
-  const words = prepareTextForHighlighting(currentPage);
-  const fullText = words.join('');
-
-  // Create a single utterance for the whole page
-  utterance = new SpeechSynthesisUtterance(fullText);
-  configureVoice(utterance);
-
-  // Set up events
-  utterance.onstart = () => {
-    console.log("Speech started");
-    // Start word highlighting when speech starts
-    startWordHighlighting();
-
-    // Show reading indicator
-    showReadingIndicator();
-
-    // Update UI
-    isSpeaking = true;
-    const readBtn = document.getElementById('readBtn');
-    if (readBtn) {
-      readBtn.classList.add('playing');
+    // If already speaking, just continue
+    if (isSpeaking && speechSynthesisInstance) {
+        speechSynthesis.resume();
+        return;
     }
-  };
 
-  utterance.onend = () => {
-    console.log("Speech ended");
-    // Clean up when done reading
-    stopReading();
-  };
+    // Get current page
+    const currentPage = document.querySelector('.story-page.active');
 
-  utterance.onerror = (event) => {
-    console.error('Speech synthesis error:', event);
-    stopReading();
-  };
+    // Prepare text for highlighting
+    wordElements = prepareTextForHighlighting(currentPage);
 
-  // Start speech
-  console.log("Starting speech synthesis");
-  window.speechSynthesis.speak(utterance);
+    // Get full text
+    const fullText = Array.from(wordElements).map(el => el.textContent).join('');
 
-  // Create tiny speech bubbles animation
-  if (typeof createTinyShower === 'function') {
-    createTinyShower('💬', 3, true);
-  }
+    // Create speech synthesis utterance
+    const utterance = new SpeechSynthesisUtterance(fullText);
+
+    // Configure speech
+    utterance.rate = 0.7;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    // Select a voice (preferably English)
+    const voices = speechSynthesis.getVoices();
+    const englishVoice = voices.find(voice =>
+        voice.lang.includes('en') &&
+        (voice.name.includes('Google') || voice.name.includes('Microsoft'))
+    );
+    if (englishVoice) {
+        utterance.voice = englishVoice;
+    }
+
+    // Reset word tracking
+    currentWordIndex = 0;
+
+    // Setup word highlighting
+    utterance.onboundary = (event) => {
+        if (event.name === 'word' && currentWordIndex < wordElements.length) {
+            // Remove previous highlight
+            wordElements.forEach(el => el.classList.remove('highlight'));
+
+            // Highlight current word
+            const currentWord = wordElements[currentWordIndex];
+            currentWord.classList.add('highlight');
+
+            // Scroll to make word visible
+            currentWord.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            currentWordIndex++;
+        }
+    };
+
+    // Setup event handlers
+    utterance.onstart = () => {
+        isSpeaking = true;
+        document.getElementById('readBtn').classList.add('playing');
+    };
+
+    utterance.onend = () => {
+        stopReading();
+    };
+
+    // Speak the text
+    speechSynthesis.speak(utterance);
+    speechSynthesisInstance = utterance;
+
+    // Track speaking state
+    isSpeaking = true;
 }
 
 /**
- * Stop reading and clean up
+ * Stop reading
  */
 function stopReading() {
-  console.log("Stopping reading");
-  // Cancel any ongoing speech
-  window.speechSynthesis.cancel();
-
-  // Clear highlighting interval
-  if (readingInterval) {
-    clearTimeout(readingInterval);
-    readingInterval = null;
-  }
-
-  // Remove word highlighting
-  document.querySelectorAll('.word').forEach(el => {
-    el.classList.remove('highlight');
-  });
-
-  // Hide reading indicator
-  hideReadingIndicator();
-
-  // Update UI
-  isSpeaking = false;
-  const readBtn = document.getElementById('readBtn');
-  if (readBtn) {
-    readBtn.classList.remove('playing');
-  }
-}
-
-/**
- * Toggle between starting and stopping reading
- */
-function toggleReadAloud() {
-  console.log("Toggle read aloud, current state:", isSpeaking);
-  if (isSpeaking) {
-    stopReading();
-  } else {
-    startReading();
-  }
-}
-
-/**
- * Show a subtle reading indicator
- */
-function showReadingIndicator() {
-  console.log("Showing reading indicator");
-  let indicator = document.getElementById('readingIndicator');
-  if (!indicator) {
-    // Create the indicator dynamically if it doesn't exist
-    console.log("Creating indicator element");
-    indicator = document.createElement('div');
-    indicator.id = 'readingIndicator';
-    indicator.className = 'reading-indicator';
-    indicator.innerHTML = `
-        <div class="indicator-icon">🔊</div>
-        <div class="indicator-dots">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-        </div>
-    `;
-    document.body.appendChild(indicator);
-  }
-
-  // Make sure it's using flex display
-  indicator.style.display = 'flex';
-}
-
-/**
- * Hide reading indicator
- */
-function hideReadingIndicator() {
-  console.log("Hiding reading indicator");
-  const indicator = document.getElementById('readingIndicator');
-  if (indicator) {
-    indicator.style.opacity = '0';
-
-    setTimeout(() => {
-      indicator.style.display = 'none';
-      indicator.style.opacity = '1'; // Reset opacity for next time
-    }, 300);
-  }
-}
-
-/**
- * Handle browser quirks like Chrome's timeout issue
- */
-function handleBrowserQuirks() {
-  // Chrome stops speech after about 15 seconds
-  if ('chrome' in window) {
-    console.log("Handling Chrome-specific quirks");
-    // Periodically resume speech
-    setInterval(() => {
-      if (isSpeaking && !window.speechSynthesis.speaking) {
-        console.log("Resuming speech synthesis");
-        window.speechSynthesis.resume();
-      }
-    }, 5000);
-  }
-}
-
-/**
- * Make sure reading stops when navigating pages
- */
-function setupPageNavigationEvents() {
-  console.log("Setting up page navigation events");
-  // Hook into existing page navigation functions
-  const originalNextPage = window.nextPage;
-  const originalPreviousPage = window.previousPage;
-
-  // Override nextPage to stop reading first
-  window.nextPage = function() {
-    console.log("Next page - stopping reading");
-    stopReading();
-    if (typeof originalNextPage === 'function') {
-      originalNextPage();
+    if (speechSynthesisInstance) {
+        speechSynthesis.cancel();
     }
-  };
 
-  // Override previousPage to stop reading first
-  window.previousPage = function() {
-    console.log("Previous page - stopping reading");
-    stopReading();
-    if (typeof originalPreviousPage === 'function') {
-      originalPreviousPage();
+    // Remove word highlights
+    if (wordElements) {
+        wordElements.forEach(el => el.classList.remove('highlight'));
     }
-  };
-}
 
-/**
- * Check if the browser supports speech synthesis
- * @return {boolean} True if speech synthesis is supported
- */
-function isSpeechSynthesisSupported() {
-  const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-  console.log("Speech synthesis supported:", supported);
-  return supported;
-}
+    // Reset speaking state
+    isSpeaking = false;
+    speechSynthesisInstance = null;
+    currentWordIndex = 0;
 
-// Initialize when the DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-  console.log("DOM loaded - initializing read aloud functionality");
-
-  // Check speech synthesis support
-  if (isSpeechSynthesisSupported()) {
-    // Initialize speech synthesis
-    initSpeechSynthesis();
-
-    // Handle browser quirks
-    handleBrowserQuirks();
-
-    // Setup navigation events
-    setupPageNavigationEvents();
-  } else {
-    // Hide read aloud button if not supported
+    // Update button state
     const readBtn = document.getElementById('readBtn');
     if (readBtn) {
-      console.log("Hiding read aloud button - not supported");
-      readBtn.style.display = 'none';
+        readBtn.classList.remove('playing');
     }
-  }
-});
+}
+
+/**
+ * Toggle read aloud
+ */
+function toggleReadAloud() {
+    if (isSpeaking) {
+        stopReading();
+    } else {
+        startReading();
+    }
+}
+
+/**
+ * Toggle theme between light and dark
+ */
+function toggleTheme() {
+    const body = document.body;
+    const icon = document.getElementById('themeIcon');
+
+    if (body.getAttribute('data-theme') === 'dark') {
+        body.removeAttribute('data-theme');
+        icon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+    } else {
+        body.setAttribute('data-theme', 'dark');
+        icon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+    }
+}

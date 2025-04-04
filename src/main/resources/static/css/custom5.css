@@ -1986,28 +1986,36 @@ h2 {
 }
 
 /* More visible word highlighting styles */
+/* Word Highlighting Styles for Read Aloud Feature */
 .story-text .word {
-  display: inline;
-  transition: all 0.15s ease;
+  display: inline-block;
+  transition: all 0.2s ease-in-out;
+  padding: 0 2px;
   border-radius: 3px;
-  padding: 0 1px;
-  position: relative;
+  line-height: 1.6;
 }
 
 .story-text .word.highlight {
-  background-color: var(--accent-1, #D9B88F);
-  color: var(--text-color, #4A3B2E);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: var(--accent-1, #D9B88F);  /* Fallback to a warm highlight color */
+  color: var(--text-color, #4A3B2E);  /* Ensure text remains readable */
   font-weight: bold;
-  transform: scale(1.05);
-  padding: 0 3px;
-  z-index: 5;
+  transform: scale(1.05);  /* Slight scale up for emphasis */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
+  z-index: 10;  /* Ensure highlighted word is on top */
 }
 
-/* Dark mode adjustment */
+/* Dark mode adjustments */
 [data-theme="dark"] .story-text .word.highlight {
-  background-color: var(--accent-1, #FFF67D);
-  color: #000;  /* Black text for contrast */
+  background-color: var(--accent-2, #7D5C4E);  /* Darker highlight for dark mode */
+  color: white;  /* Ensure contrast in dark mode */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .story-text .word.highlight {
+    transform: scale(1.03);  /* Slightly less pronounced scale on mobile */
+    padding: 0 1px;
+  }
 }
 
 /* Reading indicator */
