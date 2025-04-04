@@ -2,11 +2,8 @@
 package com.socialstory.controller;
 
 import com.socialstory.model.*;
-import com.socialstory.service.QuestionService;
-import com.socialstory.service.StoryService;
+import com.socialstory.service.*;
 import com.socialstory.repository.StoryPageRepository;
-import com.socialstory.service.UserAdminService;
-import com.socialstory.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +30,7 @@ public class StoryController {
     private final QuestionService questionService;
     private final UserService userService;
     private final UserAdminService userAdminService;
+    private final MinioStorageService minioStorageService;
 
     @GetMapping
     public String listStories(
@@ -112,7 +110,7 @@ public class StoryController {
 
 
         // Save the story (service handles questions)
-        storyService.createStory(story);
+        storyService.createStory(story, images, coverImageFile);
         redirectAttributes.addFlashAttribute("message", "Story created successfully and submitted for approval!");
         return "redirect:/stories";
     }
@@ -159,21 +157,6 @@ public class StoryController {
         return "story/view";
     }
 
-    @GetMapping("/image/{pageId}")
-    @ResponseBody
-    public ResponseEntity<byte[]> getImage(@PathVariable Long pageId) {
-        StoryPage page = storyPageRepository.findById(pageId)
-                .orElseThrow(() -> new RuntimeException("Page not found"));
-
-        if (page.getImageData() == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(page.getImageType()))
-                .header("Cache-Control", "max-age=604800, public") // 7 days cache
-                .body(page.getImageData());
-    }
 
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model, HttpSession session) {
@@ -251,7 +234,7 @@ public class StoryController {
         }
 
         // Update the story (service handles questions)
-        storyService.updateStory(story);
+        storyService.updateStory(story, images, coverImageFile, keepExistingImages, keepExistingCover);
         redirectAttributes.addFlashAttribute("message", "Story updated successfully!");
         return "redirect:/stories";
     }
@@ -275,20 +258,6 @@ public class StoryController {
         return "redirect:/stories";
     }
 
-    @GetMapping("/cover/{id}")
-    @ResponseBody
-    public ResponseEntity<byte[]> getCoverImage(@PathVariable Long id) {
-        Story story = storyService.getStoryById(id);
-
-        if (story.getCoverImage() == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(story.getCoverImageType()))
-                .header("Cache-Control", "max-age=604800, public") // 7 days cache
-                .body(story.getCoverImage());
-    }
 
     // REST endpoints for questions remain the same
     @GetMapping("/api/pages/{pageId}/questions")
@@ -327,5 +296,82 @@ public class StoryController {
         Map<String, Boolean> response = new HashMap<>();
         response.put("deleted", Boolean.TRUE);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/image/{pageId}")
+    @ResponseBody
+    public ResponseEntity<byte[]> getImage(@PathVariable Long pageId) {
+        StoryPage page = storyPageRepository.findById(pageId)
+                .orElseThrow(() -> new RuntimeException("Page not found"));
+
+        byte[] imageData;
+        String contentType;
+
+        // Check if image is migrated to MinIO
+        if (page.isImageMigrated() && page.getImagePath() != null) {
+            // Get from MinIO
+            imageData = minioStorageService.getPageImage(page.getImagePath());
+            contentType = determineContentType(page.getImagePath());
+        } else if (page.getImageData() != null) {
+            // Get from database
+            imageData = page.getImageData();
+            contentType = page.getImageType();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header("Cache-Control", "max-age=604800, public") // 7 days cache
+                .body(imageData);
+    }
+
+    @GetMapping("/cover/{id}")
+    @ResponseBody
+    public ResponseEntity<byte[]> getCoverImage(@PathVariable Long id) {
+        Story story = storyService.getStoryById(id);
+
+        byte[] imageData;
+        String contentType;
+
+        // Check if image is migrated to MinIO
+        if (story.isImageMigrated() && story.getCoverImagePath() != null) {
+            // Get from MinIO
+            imageData = minioStorageService.getCoverImage(story.getCoverImagePath());
+            contentType = determineContentType(story.getCoverImagePath());
+        } else if (story.getCoverImage() != null) {
+            // Get from database
+            imageData = story.getCoverImage();
+            contentType = story.getCoverImageType();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header("Cache-Control", "max-age=604800, public") // 7 days cache
+                .body(imageData);
+    }
+
+    /**
+     * Determine content type from file path
+     */
+    private String determineContentType(String path) {
+        if (path == null) {
+            return "image/jpeg"; // Default
+        }
+
+        path = path.toLowerCase();
+        if (path.endsWith(".jpg") || path.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (path.endsWith(".png")) {
+            return "image/png";
+        } else if (path.endsWith(".gif")) {
+            return "image/gif";
+        } else if (path.endsWith(".webp")) {
+            return "image/webp";
+        } else {
+            return "image/jpeg"; // Default
+        }
     }
 }

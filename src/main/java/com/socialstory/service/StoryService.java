@@ -4,7 +4,9 @@ package com.socialstory.service;
 import com.socialstory.model.*;
 import com.socialstory.repository.StoryArchiveRepository;
 import com.socialstory.repository.StoryRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -12,14 +14,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -28,9 +31,10 @@ public class StoryService {
     private final StoryRepository storyRepository;
     private final QuestionService questionService;
     private final StoryArchiveRepository storyArchiveRepository;
+    private final MinioStorageService minioStorageService;
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
-    public Story createStory(Story story) {
+    public Story createStory(Story story, List<MultipartFile> pageImages, MultipartFile coverImage) {
         // Set bidirectional relationships for pages
         if (story.getPages() != null) {
             story.getPages().forEach(page -> {
@@ -39,8 +43,54 @@ public class StoryService {
         }
 
         story.setStatus(Story.StoryStatus.DRAFT);
-        //story.setChangedBy(currentUser.getUsername());
         story.setSubmittedForApprovalAt(LocalDateTime.now());
+
+        // Process cover image if provided
+        if (coverImage != null && !coverImage.isEmpty()) {
+            try {
+                // Store in database for now (will be migrated later)
+                story.setCoverImage(coverImage.getBytes());
+                story.setCoverImageType(coverImage.getContentType());
+
+                // If we're directly storing in MinIO
+                String coverPath = minioStorageService.uploadCoverImage(
+                        coverImage.getBytes(),
+                        coverImage.getContentType());
+                story.setCoverImagePath(coverPath);
+                story.setImageMigrated(true);
+
+            } catch (Exception e) {
+                log.error("Error processing cover image: {}", e.getMessage());
+            }
+        }
+
+        // Process page images
+        if (story.getPages() != null && pageImages != null) {
+            int pageIndex = 0;
+            for (StoryPage page : story.getPages()) {
+                if (pageIndex < pageImages.size() && !pageImages.get(pageIndex).isEmpty()) {
+                    try {
+                        MultipartFile pageImage = pageImages.get(pageIndex);
+
+                        // Store in database for now (will be migrated later)
+                        page.setImageData(pageImage.getBytes());
+                        page.setImageType(pageImage.getContentType());
+
+                        // If we're directly storing in MinIO
+                        String imagePath = minioStorageService.uploadPageImage(
+                                pageImage.getBytes(),
+                                pageImage.getContentType());
+                        page.setImagePath(imagePath);
+                        page.setImageMigrated(true);
+
+                    } catch (Exception e) {
+                        log.error("Error processing page image: {}", e.getMessage());
+                    }
+                }
+                pageIndex++;
+            }
+        }
+
         // Save the story first to get IDs
         Story savedStory = storyRepository.save(story);
 
@@ -51,7 +101,10 @@ public class StoryService {
     }
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
-    public Story updateStory(Story updatedStory) {
+    public Story updateStory(Story updatedStory, List<MultipartFile> pageImages,
+                             MultipartFile coverImageFile, List<Boolean> keepExistingImages,
+                             Boolean keepExistingCover) {
+
         Story existingStory = storyRepository.findById(updatedStory.getId())
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + updatedStory.getId()));
 
@@ -59,13 +112,43 @@ public class StoryService {
         existingStory.setTitle(updatedStory.getTitle());
         existingStory.setTags(updatedStory.getTags());
         existingStory.setStatus(Story.StoryStatus.DRAFT);
-        //existingStory.setChangedBy(currentUser.getUsername());
+        existingStory.setChangedBy(updatedStory.getChangedBy());
         existingStory.setSubmittedForApprovalAt(LocalDateTime.now());
 
         // Update cover image if provided
-        if (updatedStory.getCoverImage() != null) {
-            existingStory.setCoverImage(updatedStory.getCoverImage());
-            existingStory.setCoverImageType(updatedStory.getCoverImageType());
+        if (coverImageFile != null && !coverImageFile.isEmpty()) {
+            try {
+                // Handle database storage
+                existingStory.setCoverImage(coverImageFile.getBytes());
+                existingStory.setCoverImageType(coverImageFile.getContentType());
+
+                // Handle MinIO storage
+                String coverPath = minioStorageService.uploadCoverImage(
+                        coverImageFile.getBytes(),
+                        coverImageFile.getContentType());
+                existingStory.setCoverImagePath(coverPath);
+                existingStory.setImageMigrated(true);
+
+            } catch (Exception e) {
+                log.error("Error processing cover image: {}", e.getMessage(), e);
+            }
+        } else if (keepExistingCover != null && keepExistingCover) {
+            // Keep existing image - do nothing
+        } else {
+            // Clear the cover image
+            existingStory.setCoverImage(null);
+            existingStory.setCoverImageType(null);
+
+            // Also clear MinIO path if it exists
+            if (existingStory.getCoverImagePath() != null) {
+                try {
+                    minioStorageService.deleteImage(existingStory.getCoverImagePath(),
+                            minioStorageService.getCoversBucket());
+                } catch (Exception e) {
+                    log.error("Error deleting cover image from MinIO: {}", e.getMessage(), e);
+                }
+                existingStory.setCoverImagePath(null);
+            }
         }
 
         // Create a map of existing pages by ID for quick lookup
@@ -76,26 +159,119 @@ public class StoryService {
         if (updatedStory.getPages() != null) {
             List<StoryPage> updatedPages = new ArrayList<>();
 
-            for (StoryPage updatedPage : updatedStory.getPages()) {
+            for (int i = 0; i < updatedStory.getPages().size(); i++) {
+                StoryPage updatedPage = updatedStory.getPages().get(i);
+
                 if (updatedPage.getId() != null && existingPages.containsKey(updatedPage.getId())) {
-                    // This is an existing page - update while preserving image data
+                    // This is an existing page - update it
                     StoryPage existingPage = existingPages.get(updatedPage.getId());
                     existingPage.setText(updatedPage.getText());
                     existingPage.setPageOrder(updatedPage.getPageOrder());
-                    // Keep existing image data and type unless new ones are provided
-                    if (updatedPage.getImageData() == null) {
-                        updatedPage.setImageData(existingPage.getImageData());
-                        updatedPage.setImageType(existingPage.getImageType());
+
+                    // Handle image update
+                    boolean keepExisting = (keepExistingImages != null &&
+                            i < keepExistingImages.size() &&
+                            keepExistingImages.get(i));
+
+                    if (pageImages != null && i < pageImages.size() && !pageImages.get(i).isEmpty()) {
+                        // New image uploaded
+                        try {
+                            MultipartFile imageFile = pageImages.get(i);
+
+                            // Database storage
+                            existingPage.setImageData(imageFile.getBytes());
+                            existingPage.setImageType(imageFile.getContentType());
+
+                            // MinIO storage - delete old image if exists
+                            if (existingPage.getImagePath() != null) {
+                                try {
+                                    minioStorageService.deleteImage(existingPage.getImagePath(),
+                                            minioStorageService.getPagesBucket());
+                                } catch (Exception e) {
+                                    log.error("Error deleting page image from MinIO: {}", e.getMessage(), e);
+                                }
+                            }
+
+                            // Upload new image to MinIO
+                            String imagePath = minioStorageService.uploadPageImage(
+                                    imageFile.getBytes(),
+                                    imageFile.getContentType());
+                            existingPage.setImagePath(imagePath);
+                            existingPage.setImageMigrated(true);
+
+                        } catch (Exception e) {
+                            log.error("Error processing page image: {}", e.getMessage(), e);
+                        }
+                    } else if (!keepExisting) {
+                        // Clear the image if not keeping existing
+                        existingPage.setImageData(null);
+                        existingPage.setImageType(null);
+
+                        // Also clear MinIO path if it exists
+                        if (existingPage.getImagePath() != null) {
+                            try {
+                                minioStorageService.deleteImage(existingPage.getImagePath(),
+                                        minioStorageService.getPagesBucket());
+                            } catch (Exception e) {
+                                log.error("Error deleting page image from MinIO: {}", e.getMessage(), e);
+                            }
+                            existingPage.setImagePath(null);
+                        }
                     }
-                    updatedPage.setStory(existingStory);
-                    updatedPages.add(updatedPage);
+
+                    updatedPages.add(existingPage);
                 } else {
                     // This is a new page
                     updatedPage.setStory(existingStory);
+
+                    // Handle new page image if provided
+                    if (pageImages != null && i < pageImages.size() && !pageImages.get(i).isEmpty()) {
+                        try {
+                            MultipartFile imageFile = pageImages.get(i);
+
+                            // Database storage
+                            updatedPage.setImageData(imageFile.getBytes());
+                            updatedPage.setImageType(imageFile.getContentType());
+
+                            // MinIO storage
+                            String imagePath = minioStorageService.uploadPageImage(
+                                    imageFile.getBytes(),
+                                    imageFile.getContentType());
+                            updatedPage.setImagePath(imagePath);
+                            updatedPage.setImageMigrated(true);
+
+                        } catch (Exception e) {
+                            log.error("Error processing page image: {}", e.getMessage(), e);
+                        }
+                    }
+
                     updatedPages.add(updatedPage);
                 }
             }
 
+            // Delete any pages that are in the database but not in the updated story
+            Set<Long> updatedPageIds = updatedPages.stream()
+                    .filter(p -> p.getId() != null)
+                    .map(StoryPage::getId)
+                    .collect(Collectors.toSet());
+
+            List<StoryPage> pagesToDelete = existingStory.getPages().stream()
+                    .filter(p -> !updatedPageIds.contains(p.getId()))
+                    .collect(Collectors.toList());
+
+            // Delete pages and their images from MinIO
+            for (StoryPage pageToDelete : pagesToDelete) {
+                if (pageToDelete.getImagePath() != null) {
+                    try {
+                        minioStorageService.deleteImage(pageToDelete.getImagePath(),
+                                minioStorageService.getPagesBucket());
+                    } catch (Exception e) {
+                        log.error("Error deleting page image from MinIO: {}", e.getMessage(), e);
+                    }
+                }
+            }
+
+            // Replace all pages
             existingStory.getPages().clear();
             existingStory.getPages().addAll(updatedPages);
         }

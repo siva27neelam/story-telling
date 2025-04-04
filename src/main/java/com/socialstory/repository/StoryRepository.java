@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -29,4 +30,8 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
 
     @Query("SELECT new com.socialstory.model.StoryListDTO(s.id, s.title, s.tags, CASE WHEN s.coverImage IS NULL THEN false ELSE true END, s.changedBy, s.submittedForApprovalAt) FROM Story s WHERE s.status = 'DRAFT' ORDER BY s.submittedForApprovalAt DESC")
     Page<StoryListDTO> findPendingStoriesForList(Pageable pageable);
+
+    @Query("SELECT s FROM Story s WHERE (s.imageMigrated = false OR s.imageMigrated IS NULL) AND s.coverImage IS NOT NULL ORDER BY s.id")
+    List<Story> findUnmigratedCoverImages(@Param("limit") int limit, @Param("offset") int offset);
+
 }

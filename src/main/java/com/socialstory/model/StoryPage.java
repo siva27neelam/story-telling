@@ -44,4 +44,11 @@ public class StoryPage {
 
     @Column(name = "is_image_compressed")
     private Boolean isImageCompressed = false;
+
+    @Column(name = "image_path")
+    private String imagePath;
+
+    // Flag for migration status
+    @Column(name = "image_migrated")
+    private boolean imageMigrated = false;
 }

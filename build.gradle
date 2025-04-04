@@ -45,6 +45,9 @@ dependencies {
     //MARIADB
 //         implementation 'org.mariadb.jdbc:mariadb-java-client:3.3.3'
 
+implementation 'io.minio:minio:8.5.2'
+
+
 }
 
 test {

@@ -62,6 +62,13 @@ public class Story {
     private String approvedBy;
     private LocalDateTime approvedAt;
 
+    @Column(name = "cover_image_path")
+    private String coverImagePath;
+
+    // Flag for migration status
+    @Column(name = "image_migrated")
+    private boolean imageMigrated = false;
+
     public enum StoryStatus {
         DRAFT,        // Created but not submitted
         PENDING,      // Submitted for approval

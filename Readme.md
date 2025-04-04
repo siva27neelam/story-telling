@@ -32,7 +32,18 @@ FLUSH PRIVILEGES;
  GRANT ALL PRIVILEGES ON *.* TO 'havi'@'%' IDENTIFIED BY 'Juno@9091' WITH GRANT OPTION;
 
 
-/media/devmon/sda1-ata-TOSHIBA_MQ01ABD1/havi
+=======================================
+MINIio
+
+docker run -d \
+  --name minio \
+  -p 9090:9000 \
+  -p 9001:9001 \
+  -e "MINIO_ROOT_USER=havi" \
+  -e "MINIO_ROOT_PASSWORD=Juno@9091" \
+  -v /media/exthd1/miniio/data:/data \
+  quay.io/minio/minio server /data --console-address ":9001"
+
 
 gradle clean build
 docker login -u siva27neelam
