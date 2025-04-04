@@ -1,770 +1,425 @@
-/**
- * Enhanced Story View Interaction Script
- */
-
-// Core variables
-let currentPageIndex = 0;
-let magicMenuOpen = false;
-let speech = null;
-let speechQueue = [];
+// Global variables for speech synthesis
 let isSpeaking = false;
 let speechSynthVoices = [];
-let totalPagesCount = 0;
+let wordElements = [];
+let currentWordIndex = 0;
+let readingInterval = null;
+let utterance = null;
+let averageWordDuration = 250; // milliseconds per word
 
 /**
- * Show a specific page by index
- * @param {number} index - The index of the page to show
- */
-function showPage(index) {
-    // Create a page turn effect
-    const pageElement = document.getElementById('page-' + index);
-
-    // Stop any ongoing speech
-    stopReading();
-
-    // Hide all pages
-    document.querySelectorAll('.story-page').forEach(page => {
-        page.classList.remove('active');
-    });
-
-    // Show the selected page with animation
-    pageElement.style.opacity = '0';
-    pageElement.classList.add('active');
-
-    setTimeout(() => {
-        pageElement.style.opacity = '1';
-        pageElement.style.transform = 'translateY(0)';
-    }, 50);
-
-    // Update navigation buttons
-    document.getElementById('prevBtn').disabled = index === 0;
-    document.getElementById('nextBtn').style.display = index === totalPagesCount - 1 ? 'none' : 'inline-block';
-    document.getElementById('exitBtn').style.display = index === totalPagesCount - 1 ? 'inline-block' : 'none';
-
-    // Update page indicator and progress bar
-    document.getElementById('currentPage').textContent = index + 1;
-    updateProgressBar(index);
-
-    // Update questions button if function exists
-    if (typeof updateQuestionsButton === 'function') {
-        updateQuestionsButton();
-    }
-
-    // If it's the last page, celebrate
-    if (index === totalPagesCount - 1) {
-        setTimeout(() => {
-            createShower('⭐');
-            playSound('twinkle');
-            showAchievement('Story Completed!', 'You have reached the end of the story!');
-        }, 500);
-    }
-}
-
-/**
- * Update progress bar based on current page
- * @param {number} index - Current page index
- */
-function updateProgressBar(index) {
-    const progressFill = document.getElementById('progressFill');
-    const progressPercentage = ((index + 1) / totalPagesCount) * 100;
-    progressFill.style.width = progressPercentage + '%';
-}
-
-/**
- * Go to the next page with enhanced transition
- */
-function nextPage() {
-    // Optional question reminder
-    if (typeof questionsAnswered !== 'undefined' && !questionsAnswered.has(currentPageIndex)) {
-        // Highlight questions button
-        const btn = document.getElementById('questionsBtn');
-        btn.classList.add('pulse');
-        setTimeout(() => {
-            btn.classList.remove('pulse');
-        }, 1000);
-
-        // Show tiny shower reminder
-        createTinyShower('❓', 3, true);
-        playSound('pop');
-    }
-
-    if (currentPageIndex < totalPagesCount - 1) {
-        const oldPage = document.querySelector('.story-page.active');
-        oldPage.style.transform = 'translateX(-100px)';
-        oldPage.style.opacity = '0';
-
-        // Create page turn effect
-        showPageTurnEffect('right');
-
-        currentPageIndex++;
-
-        // Play page turn sound
-        playSound('page-turn');
-
-        setTimeout(() => {
-            showPage(currentPageIndex);
-        }, 300);
-    }
-}
-
-/**
- * Go to the previous page
- */
-function previousPage() {
-    if (currentPageIndex > 0) {
-        const oldPage = document.querySelector('.story-page.active');
-        oldPage.style.transform = 'translateX(100px)';
-        oldPage.style.opacity = '0';
-
-        // Create page turn effect
-        showPageTurnEffect('left');
-
-        currentPageIndex--;
-
-        // Play page turn sound
-        playSound('page-turn');
-
-        setTimeout(() => {
-            showPage(currentPageIndex);
-        }, 300);
-    }
-}
-
-/**
- * Initialize speech synthesis with robust voice selection
+ * Initialize speech synthesis with voice loading
  */
 function initSpeechSynthesis() {
-    // Comprehensive voice loading with fallback strategy
-    function loadVoices() {
-        const allVoices = window.speechSynthesis.getVoices();
+  console.log("Initializing speech synthesis");
+  // Try to get voices immediately
+  speechSynthVoices = window.speechSynthesis.getVoices();
+  console.log("Initial voices:", speechSynthVoices.length);
 
-        // Preferred voices in order
-        const preferredVoices = [
-            'Google US English',
-            'Microsoft Zira Desktop',
-            'Samantha',
-            'Google US English Female',
-            'Alex'
-        ];
-
-        // Language preferences
-        const languagePreferences = ['en-US', 'en-GB', 'en'];
-
-        // Voice selection strategy
-        let selectedVoice = null;
-
-        // First, try finding a preferred voice
-        for (const voiceName of preferredVoices) {
-            selectedVoice = allVoices.find(voice =>
-                voice.name.includes(voiceName) ||
-                preferredVoices.some(pref => voice.name.includes(pref))
-            );
-            if (selectedVoice) break;
-        }
-
-        // If no preferred voice, try language-based selection
-        if (!selectedVoice) {
-            for (const lang of languagePreferences) {
-                selectedVoice = allVoices.find(voice =>
-                    voice.lang.startsWith(lang)
-                );
-                if (selectedVoice) break;
-            }
-        }
-
-        // Fallback to first available voice
-        if (!selectedVoice && allVoices.length > 0) {
-            selectedVoice = allVoices[0];
-        }
-
-        speechSynthVoices = selectedVoice ? [selectedVoice] : [];
-        console.log('Selected Voice:', selectedVoice ? selectedVoice.name : 'No voice found');
-    }
-
-    // Initial load
-    loadVoices();
-
-    // Handle browsers that load voices asynchronously
-    if (speechSynthVoices.length === 0) {
-        window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
-    }
+  // Set up event listener for when voices change/load
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = () => {
+      speechSynthVoices = window.speechSynthesis.getVoices();
+      console.log('Voices loaded:', speechSynthVoices.length);
+    };
+  }
 }
 
 /**
- * Split text into sentences for more natural reading
- * @param {string} text - The text to split
- * @returns {string[]} Array of sentences
+ * Split text into words for reading
+ * @param {string} text - The text to split into words
+ * @return {string[]} Array of words
  */
-function splitTextIntoSentences(text) {
-    // Regular expression to split on sentence-ending punctuation
-    return text.split(/(?<=[.!?])\s+/).filter(sentence =>
-        sentence.trim().length > 0
-    );
+function splitTextIntoWords(text) {
+  // Match words including attached punctuation
+  const words = text.match(/\S+\s*/g) || [];
+  console.log(`Split text into ${words.length} words`);
+  return words;
 }
 
 /**
- * Start reading the current page text
- * @param {string} text - The text to read
+ * Configure the voice to sound as natural as possible
+ * @param {SpeechSynthesisUtterance} utterance - The utterance to configure
  */
-function startReading(text) {
-    // Stop any ongoing speech
+function configureVoice(utterance) {
+  // Create a ranked list of preferred voices
+  const preferredVoicePatterns = [
+    /Google US English/i,
+    /Microsoft Zira/i,
+    /Daniel/i,
+    /Samantha/i,
+    /Karen/i,
+    /English/i
+  ];
+
+  // Find the best available voice
+  let selectedVoice = null;
+  for (const pattern of preferredVoicePatterns) {
+    selectedVoice = speechSynthVoices.find(voice => pattern.test(voice.name));
+    if (selectedVoice) break;
+  }
+
+  // If we found a decent voice, use it
+  if (selectedVoice) {
+    console.log("Using voice:", selectedVoice.name);
+    utterance.voice = selectedVoice;
+  } else {
+    console.log("No preferred voice found, using default");
+  }
+
+  // Adjust parameters for more natural speech
+  utterance.rate = 0.9;     // Slightly slower than default
+  utterance.pitch = 1.0;    // Natural pitch
+  utterance.volume = 1.0;   // Full volume
+}
+
+/**
+ * Prepare text for highlighting by wrapping words in spans
+ * @param {HTMLElement} pageElement - The current page element
+ * @return {string[]} Array of words
+ */
+function prepareTextForHighlighting(pageElement) {
+  console.log("Preparing text for highlighting");
+  const textElement = pageElement.querySelector('.story-text');
+  if (!textElement) {
+    console.error("Story text element not found!");
+    return [];
+  }
+
+  const originalText = textElement.textContent;
+  const words = splitTextIntoWords(originalText);
+
+  // Clear and rebuild with spans
+  textElement.innerHTML = '';
+
+  words.forEach((word, index) => {
+    const span = document.createElement('span');
+    span.className = 'word';
+    span.setAttribute('data-index', index);
+    span.textContent = word;
+    textElement.appendChild(span);
+  });
+
+  console.log(`Created ${words.length} word span elements`);
+  return words;
+}
+
+/**
+ * Estimate reading time per word based on word complexity
+ * @param {string} word - The word to analyze
+ * @return {number} Estimated reading time in milliseconds
+ */
+function estimateWordReadingTime(word) {
+  // Strip spaces and punctuation for length calculation
+  const stripped = word.replace(/[^\w]/g, '');
+
+  // Base time per word
+  let time = averageWordDuration;
+
+  // Adjust time based on word length
+  if (stripped.length > 8) {
+    time += 100; // Longer words take more time
+  } else if (stripped.length <= 2) {
+    time -= 50; // Very short words take less time
+  }
+
+  // Adjust for punctuation
+  if (word.includes('.') || word.includes('!') || word.includes('?')) {
+    time += 200; // Pause at end of sentences
+  } else if (word.includes(',') || word.includes(';') || word.includes(':')) {
+    time += 100; // Smaller pause for other punctuation
+  }
+
+  return time;
+}
+
+/**
+ * Start highlighting words as they would be read, with estimated timing
+ */
+function startWordHighlighting() {
+  console.log("Starting word highlighting");
+  // Reset highlighting
+  currentWordIndex = 0;
+
+  // Get all word elements
+  wordElements = document.querySelectorAll('.word');
+  console.log(`Found ${wordElements.length} word elements`);
+
+  // Clear any existing intervals
+  if (readingInterval) {
+    clearInterval(readingInterval);
+    readingInterval = null;
+  }
+
+  // Calculate total text length for timing estimation
+  const totalWords = wordElements.length;
+  const utteranceText = Array.from(wordElements).map(el => el.textContent).join('');
+
+  // Estimate total speech duration based on text length and speaking rate
+  // This is very approximate and varies by browser/voice
+  const totalCharacters = utteranceText.length;
+  const estimatedTotalDuration = (totalCharacters / 15) * 1000; // ~15 chars per second
+  averageWordDuration = estimatedTotalDuration / totalWords;
+
+  console.log(`Estimated total duration: ${estimatedTotalDuration}ms, average word: ${averageWordDuration}ms`);
+
+  // Function to highlight next word
+  function highlightNextWord() {
+    // Remove highlighting from all words
+    wordElements.forEach(el => el.classList.remove('highlight'));
+
+    // If we've reached the end, stop highlighting
+    if (currentWordIndex >= wordElements.length) {
+      if (readingInterval) {
+        clearTimeout(readingInterval);
+        readingInterval = null;
+      }
+      return;
+    }
+
+    // Highlight current word
+    const currentWord = wordElements[currentWordIndex];
+    currentWord.classList.add('highlight');
+
+    // Make sure the word is visible
+    currentWord.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'nearest'
+    });
+
+    // Calculate reading time for this word
+    const word = currentWord.textContent;
+    const readTime = estimateWordReadingTime(word);
+
+    // Move to next word after estimated time
+    currentWordIndex++;
+
+    // For smoother reading, use setTimeout instead of interval
+    clearTimeout(readingInterval);
+    readingInterval = setTimeout(highlightNextWord, readTime);
+  }
+
+  // Start the highlighting
+  highlightNextWord();
+}
+
+/**
+ * Start reading the entire page aloud
+ */
+function startReading() {
+alert("jere")
+  console.log("Starting reading");
+  // Stop any previous reading
+  stopReading();
+
+  // Get current page and prepare text
+  const currentPage = document.querySelector('.story-page.active');
+  const words = prepareTextForHighlighting(currentPage);
+  const fullText = words.join('');
+
+  // Create a single utterance for the whole page
+  utterance = new SpeechSynthesisUtterance(fullText);
+  configureVoice(utterance);
+
+  // Set up events
+  utterance.onstart = () => {
+    console.log("Speech started");
+    // Start word highlighting when speech starts
+    startWordHighlighting();
+
+    // Show reading indicator
+    showReadingIndicator();
+
+    // Update UI
+    isSpeaking = true;
+    const readBtn = document.getElementById('readBtn');
+    if (readBtn) {
+      readBtn.classList.add('playing');
+    }
+  };
+
+  utterance.onend = () => {
+    console.log("Speech ended");
+    // Clean up when done reading
     stopReading();
+  };
 
-    // Split text into sentences
-    const sentences = splitTextIntoSentences(text);
-    speechQueue = sentences;
+  utterance.onerror = (event) => {
+    console.error('Speech synthesis error:', event);
+    stopReading();
+  };
 
-    // If no sentences, return
-    if (speechQueue.length === 0) return;
+  // Start speech
+  console.log("Starting speech synthesis");
+  window.speechSynthesis.speak(utterance);
 
-    // Configure speech
-    function speakNextSentence() {
-        if (speechQueue.length === 0) {
-            // Reading complete
-            isSpeaking = false;
-            const readBtn = document.getElementById('readBtn');
-            readBtn.classList.remove('playing');
-            hideReadingIndicator();
-            showAchievement('Listener', 'You listened to a page being read aloud!');
-            return;
-        }
-
-        const sentence = speechQueue.shift();
-        speech = new SpeechSynthesisUtterance(sentence);
-
-        // Configure voice settings
-        speech.rate = 0.85;  // Slightly slower for clarity
-        speech.pitch = 1.0;  // Natural pitch
-        speech.volume = 1.0; // Full volume
-
-        // Use pre-selected voice
-        if (speechSynthVoices.length > 0) {
-            speech.voice = speechSynthVoices[0];
-        }
-
-        // Event handlers
-        speech.onstart = () => {
-            isSpeaking = true;
-            const readBtn = document.getElementById('readBtn');
-            readBtn.classList.add('playing');
-            showReadingIndicator();
-        };
-
-        speech.onend = () => {
-            // Immediately start next sentence
-            speakNextSentence();
-        };
-
-        // Speak the sentence
-        window.speechSynthesis.speak(speech);
-    }
-
-    // Start speaking the first sentence
-    speakNextSentence();
+  // Create tiny speech bubbles animation
+  if (typeof createTinyShower === 'function') {
+    createTinyShower('💬', 3, true);
+  }
 }
 
-function showReadingIndicator(){
-}
-
-function hideReadingIndicator(){
-}
-
-function addReadingIndicatorStyles(){
-}
 /**
- * Stop reading and cancel speech
+ * Stop reading and clean up
  */
 function stopReading() {
-    if (speech) {
-        window.speechSynthesis.cancel();
-        speechQueue = []; // Clear the queue
+  console.log("Stopping reading");
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
 
-        const readBtn = document.getElementById('readBtn');
-        readBtn.classList.remove('playing');
+  // Clear highlighting interval
+  if (readingInterval) {
+    clearTimeout(readingInterval);
+    readingInterval = null;
+  }
 
-        isSpeaking = false;
-        hideReadingIndicator();
-    }
+  // Remove word highlighting
+  document.querySelectorAll('.word').forEach(el => {
+    el.classList.remove('highlight');
+  });
+
+  // Hide reading indicator
+  hideReadingIndicator();
+
+  // Update UI
+  isSpeaking = false;
+  const readBtn = document.getElementById('readBtn');
+  if (readBtn) {
+    readBtn.classList.remove('playing');
+  }
 }
 
 /**
- * Toggle read aloud functionality
+ * Toggle between starting and stopping reading
  */
 function toggleReadAloud() {
-    const readBtn = document.getElementById('readBtn');
-
-    if (speech && window.speechSynthesis.speaking) {
-        stopReading();
-    } else {
-        const currentText = document.querySelector('.story-page.active .story-text').textContent;
-        startReading(currentText);
-
-        // Visual indication that reading is happening
-        createTinyShower('💬', 3, true);
-    }
+  console.log("Toggle read aloud, current state:", isSpeaking);
+  if (isSpeaking) {
+    stopReading();
+  } else {
+    startReading();
+  }
 }
 
 /**
- * Show page turn effect animation
- * @param {string} direction - The direction of the page turn ('left' or 'right')
+ * Show a subtle reading indicator
  */
+function showReadingIndicator() {
+  console.log("Showing reading indicator");
+  let indicator = document.getElementById('readingIndicator');
+  if (!indicator) {
+    // Create the indicator dynamically if it doesn't exist
+    console.log("Creating indicator element");
+    indicator = document.createElement('div');
+    indicator.id = 'readingIndicator';
+    indicator.className = 'reading-indicator';
+    indicator.innerHTML = `
+        <div class="indicator-icon">🔊</div>
+        <div class="indicator-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+    `;
+    document.body.appendChild(indicator);
+  }
+
+  // Make sure it's using flex display
+  indicator.style.display = 'flex';
+}
+
 /**
- * Show page turn effect animation
- * @param {string} direction - The direction of the page turn ('left' or 'right')
+ * Hide reading indicator
  */
-function showPageTurnEffect(direction) {
-    // Create the effect elements dynamically if they don't exist
-    let effect = document.querySelector('.page-turn-effect');
-    if (!effect) {
-        effect = document.createElement('div');
-        effect.className = 'page-turn-effect';
-        effect.style.position = 'fixed';
-        effect.style.top = '0';
-        effect.style.left = '0';
-        effect.style.width = '100%';
-        effect.style.height = '100%';
-        effect.style.zIndex = '1000';
-        effect.style.pointerEvents = 'none';
-        effect.style.display = 'none';
+function hideReadingIndicator() {
+  console.log("Hiding reading indicator");
+  const indicator = document.getElementById('readingIndicator');
+  if (indicator) {
+    indicator.style.opacity = '0';
 
-        const fold = document.createElement('div');
-        fold.className = 'page-turn-fold';
-        fold.style.position = 'absolute';
-        fold.style.backgroundColor = 'var(--page-color, #f0f0f0)';
-        fold.style.transformOrigin = 'top left';
-
-        effect.appendChild(fold);
-        document.body.appendChild(effect);
-    }
-
-    const fold = effect.querySelector('.page-turn-fold');
-
-    // Fallback color if CSS variable is not set
-    const pageColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--page-color') || '#f0f0f0';
-
-    // Set up the effect based on direction
-    if (direction === 'right') {
-        fold.style.top = '0';
-        fold.style.right = '0';
-        fold.style.borderWidth = '0 0 100vh 100vw';
-        fold.style.borderColor = `transparent transparent ${pageColor} transparent`;
-        fold.style.borderStyle = 'solid';
-    } else {
-        fold.style.top = '0';
-        fold.style.left = '0';
-        fold.style.borderWidth = '100vh 100vw 0 0';
-        fold.style.borderColor = `${pageColor} transparent transparent transparent`;
-        fold.style.borderStyle = 'solid';
-    }
-
-    // Show the effect
-    effect.style.display = 'block';
-
-    // Animate the fold
     setTimeout(() => {
-        fold.style.borderWidth = '0 0 0 0';
-    }, 10);
-
-    // Hide the effect after animation completes
-    setTimeout(() => {
-        effect.style.display = 'none';
+      indicator.style.display = 'none';
+      indicator.style.opacity = '1'; // Reset opacity for next time
     }, 300);
-}
-// User metrics tracking
-let interactionId = null;
-let startTime = Date.now();
-let lastUpdateTime = startTime;
-let questionCorrectCount = 0;
-let questionTotalCount = 0;
-
-/**
- * Initialize metrics tracking
- */
-function initializeMetricsTracking() {
-    // Get interaction ID if logged in
-    const interactionData = document.getElementById('interactionData');
-    interactionId = interactionData ? interactionData.dataset.interactionId : null;
-
-    if (interactionId) {
-        // Setup periodic tracking update
-        setInterval(updateTimeSpent, 30000); // Update every 30 seconds
-
-        // Update on page change
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'hidden') {
-                updateTimeSpent();
-            }
-        });
-
-        // Update on page unload
-        window.addEventListener('beforeunload', function() {
-            updateTimeSpent();
-        });
-    }
+  }
 }
 
 /**
- * Update time spent on story
+ * Handle browser quirks like Chrome's timeout issue
  */
-function updateTimeSpent() {
-    if (!interactionId) return;
-
-    const now = Date.now();
-    const timeSinceLastUpdate = Math.floor((now - lastUpdateTime) / 1000); // In seconds
-
-    if (timeSinceLastUpdate > 2) { // Only update if more than 2 seconds have passed
-        // Send update to server
-        fetch(`/api/interactions/${interactionId}/time`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ seconds: timeSinceLastUpdate })
-        }).catch(error => console.error('Failed to update time spent:', error));
-
-        lastUpdateTime = now;
-    }
+function handleBrowserQuirks() {
+  // Chrome stops speech after about 15 seconds
+  if ('chrome' in window) {
+    console.log("Handling Chrome-specific quirks");
+    // Periodically resume speech
+    setInterval(() => {
+      if (isSpeaking && !window.speechSynthesis.speaking) {
+        console.log("Resuming speech synthesis");
+        window.speechSynthesis.resume();
+      }
+    }, 5000);
+  }
 }
 
 /**
- * Record question answer
- * @param {boolean} correct - Whether the answer was correct
+ * Make sure reading stops when navigating pages
  */
-function recordQuestionAnswer(correct) {
-    if (!interactionId) return;
+function setupPageNavigationEvents() {
+  console.log("Setting up page navigation events");
+  // Hook into existing page navigation functions
+  const originalNextPage = window.nextPage;
+  const originalPreviousPage = window.previousPage;
 
-    questionTotalCount++;
-    if (correct) questionCorrectCount++;
+  // Override nextPage to stop reading first
+  window.nextPage = function() {
+    console.log("Next page - stopping reading");
+    stopReading();
+    if (typeof originalNextPage === 'function') {
+      originalNextPage();
+    }
+  };
 
-    // Send data to server
-    fetch(`/api/interactions/${interactionId}/question`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ correct: correct })
-    }).catch(error => console.error('Failed to record question answer:', error));
+  // Override previousPage to stop reading first
+  window.previousPage = function() {
+    console.log("Previous page - stopping reading");
+    stopReading();
+    if (typeof originalPreviousPage === 'function') {
+      originalPreviousPage();
+    }
+  };
 }
 
 /**
- * Record story completion
+ * Check if the browser supports speech synthesis
+ * @return {boolean} True if speech synthesis is supported
  */
-function recordStoryCompletion() {
-    if (!interactionId) return;
-
-    // Send completion status to server
-    fetch(`/api/interactions/${interactionId}/complete`, {
-        method: 'POST'
-    }).catch(error => console.error('Failed to record completion:', error));
+function isSpeechSynthesisSupported() {
+  const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  console.log("Speech synthesis supported:", supported);
+  return supported;
 }
 
-// Initialize the story view when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    const icon = document.getElementById('themeIcon');
+// Initialize when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("DOM loaded - initializing read aloud functionality");
 
-    if (savedTheme === 'dark') {
-        document.body.setAttribute('data-theme', 'dark');
-        icon.classList.replace('fa-moon', 'fa-sun');
-    }
-
-    // Set total pages from global variable
-    totalPagesCount = typeof totalPages !== 'undefined' ? totalPages :
-        document.querySelectorAll('.story-page').length;
-
-    // Initialize first page with animation
-    const firstPage = document.querySelector('.story-page.active');
-    if (firstPage) {
-        firstPage.style.opacity = '0';
-        firstPage.style.transform = 'translateY(20px)';
-
-        setTimeout(() => {
-            firstPage.style.opacity = '1';
-            firstPage.style.transform = 'translateY(0)';
-        }, 300);
-    }
-
-    // Add subtle sparkle to title
-    setTimeout(() => {
-        createTinyShower('✨', 3);
-    }, 1000);
-
+  // Check speech synthesis support
+  if (isSpeechSynthesisSupported()) {
     // Initialize speech synthesis
     initSpeechSynthesis();
 
-    // Add keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight') nextPage();
-        if (e.key === 'ArrowLeft') previousPage();
-        if (e.key === ' ') {
-            e.preventDefault();
-            toggleReadAloud();
-        }
-        if (e.key === 'm') {
-            toggleMagicMenu();
-        }
-    });
+    // Handle browser quirks
+    handleBrowserQuirks();
 
-    // Close magic menu when clicking outside
-    document.addEventListener('click', (e) => {
-        if (magicMenuOpen && !e.target.closest('.magic-corner')) {
-            toggleMagicMenu();
-        }
-    });
-
-    // Initialize metrics tracking
-    initializeMetricsTracking();
+    // Setup navigation events
+    setupPageNavigationEvents();
+  } else {
+    // Hide read aloud button if not supported
+    const readBtn = document.getElementById('readBtn');
+    if (readBtn) {
+      console.log("Hiding read aloud button - not supported");
+      readBtn.style.display = 'none';
+    }
+  }
 });
-
-/**
- * Toggle magic menu open/closed
- */
-function toggleMagicMenu() {
-    const menu = document.getElementById('magicMenu');
-    magicMenuOpen = !magicMenuOpen;
-
-    if (magicMenuOpen) {
-        menu.style.display = 'flex';
-        setTimeout(() => {
-            menu.style.opacity = '1';
-            menu.style.transform = 'scale(1)';
-        }, 10);
-
-        // Play a subtle sound effect
-        playSound('pop');
-    } else {
-        menu.style.opacity = '0';
-        menu.style.transform = 'scale(0.5)';
-        setTimeout(() => {
-            menu.style.display = 'none';
-        }, 300);
-    }
-}
-
-/**
- * Create a shower of emoji particles
- * @param {string} emoji - The emoji to use
- */
-function createShower(emoji) {
-    const container = document.getElementById('particle-container');
-    const count = 20 + Math.floor(Math.random() * 10); // Between 20-30 particles
-
-    // Clear existing particles if there are too many
-    if (container.children.length > 100) {
-        container.innerHTML = '';
-    }
-
-    // Play a fun sound effect
-    const audioEffects = {
-        '⭐': 'twinkle',
-        '❤️': 'pop',
-        '🎈': 'balloon',
-        '🌈': 'magic',
-        '🎉': 'twinkle'
-    };
-
-    playSound(audioEffects[emoji] || 'pop');
-
-    for (let i = 0; i < count; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.textContent = emoji;
-
-        // Random position from click or center if no event
-        const startX = 40 + Math.random() * (window.innerWidth - 80);
-        const startY = window.innerHeight;
-
-        // Random end position
-        const endX = startX + (Math.random() - 0.5) * 300;
-        const endY = 100 + Math.random() * 400;
-
-        // Random sizes - much larger now
-        const size = 40 + Math.random() * 60;
-
-        // Set styles
-        particle.style.left = startX + 'px';
-        particle.style.top = startY + 'px';
-        particle.style.fontSize = size + 'px';
-
-        // Add to container
-        container.appendChild(particle);
-
-        // Animate upward
-        setTimeout(() => {
-            particle.style.transform = `translate(${endX - startX}px, ${endY - startY}px) rotate(${Math.random() * 360}deg)`;
-            particle.style.opacity = '0';
-        }, 10);
-
-        // Remove after animation completes
-        setTimeout(() => {
-            if (container.contains(particle)) {
-                container.removeChild(particle);
-            }
-        }, 3000);
-    }
-}
-
-/**
- * Create a smaller shower of emoji particles
- * @param {string} emoji - The emoji to use
- * @param {number} count - Number of particles
- * @param {boolean} nearButton - Whether to position near a button
- */
-function createTinyShower(emoji, count = 5, nearButton = false) {
-    const container = document.getElementById('particle-container');
-
-    for (let i = 0; i < count; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle tiny';
-        particle.textContent = emoji;
-
-        let startX, startY;
-
-        if (nearButton) {
-            // Position near the button
-            const buttonId = emoji === '❓' ? 'questionsBtn' : (emoji === '💬' ? 'readBtn' : 'questionsBtn');
-            const button = document.getElementById(buttonId);
-            const rect = button.getBoundingClientRect();
-            startX = rect.x + rect.width/2 + (Math.random() - 0.5) * 20;
-            startY = rect.y;
-        } else {
-            startX = Math.random() * window.innerWidth;
-            startY = Math.random() * window.innerHeight;
-        }
-
-        // Random end position
-        const endX = startX + (Math.random() - 0.5) * 100;
-        const endY = startY - 50 - Math.random() * 50;
-        const rotation = (Math.random() - 0.5) * 60;
-
-        // Set styles
-        particle.style.left = startX + 'px';
-        particle.style.top = startY + 'px';
-        particle.style.fontSize = 20 + Math.random() * 10 + 'px';
-
-        // Add to container
-        container.appendChild(particle);
-
-        // Animate upward
-        setTimeout(() => {
-            particle.style.transform = `translate(${endX - startX}px, ${endY - startY}px) rotate(${rotation}deg)`;
-            particle.style.opacity = '0';
-        }, 10);
-
-        // Remove after animation completes
-        setTimeout(() => {
-            if (container.contains(particle)) {
-                container.removeChild(particle);
-            }
-        }, 2000);
-    }
-}
-
-/**
- * Play a sound effect
- * @param {string} type - The type of sound to play
- */
-function playSound(type) {
-    // Create audio elements with different sounds
-    let soundUrl;
-
-    switch(type) {
-        case 'twinkle':
-            soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/success.mp3';
-            break;
-        case 'pop':
-            soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
-            break;
-        case 'balloon':
-            soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/notification.mp3';
-            break;
-        case 'magic':
-            soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/toggle.mp3';
-            break;
-        case 'page-turn':
-            soundUrl = 'https://cdn.jsdelivr.net/gh/Leimi/SoundButton@master/sounds/sfx_sounds_page-turn-01a.mp3';
-            break;
-        default:
-            soundUrl = 'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/sounds/click.mp3';
-    }
-
-    // Create and play the audio
-    const audio = new Audio(soundUrl);
-    audio.volume = 0.4; // 40% volume
-    audio.play().catch(e => console.log('Audio play failed:', e));
-}
-
-/**
- * Show achievement notification
- * @param {string} title - Achievement title
- * @param {string} text - Achievement description
- */
-function showAchievement(title, text) {
-    const toast = document.getElementById('achievementToast');
-    if (!toast) return; // Skip if element doesn't exist
-
-    const achievementText = document.getElementById('achievementText');
-
-    // Set achievement text
-    achievementText.textContent = text;
-
-    // Update title
-    toast.querySelector('h4').textContent = title;
-
-    // Show toast
-    toast.classList.add('show');
-
-    // Play sound
-    playSound('twinkle');
-
-    // Hide after some time
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 4000);
-}
-
-/**
- * Toggle theme between light and dark with enhanced transition
- */
-function toggleTheme() {
-    const body = document.body;
-    const icon = document.getElementById('themeIcon');
-
-    // Create a transition overlay
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-    overlay.style.zIndex = '9999';
-    overlay.style.opacity = '0';
-    overlay.style.transition = 'opacity 0.3s ease';
-    document.body.appendChild(overlay);
-
-    // Fade in overlay
-    setTimeout(() => {
-        overlay.style.opacity = '1';
-    }, 10);
-
-    // Switch theme after brief delay
-    setTimeout(() => {
-        if (body.getAttribute('data-theme') === 'dark') {
-            body.removeAttribute('data-theme');
-            icon.classList.replace('fa-sun', 'fa-moon');
-            localStorage.setItem('theme', 'light');
-        } else {
-            body.setAttribute('data-theme', 'dark');
-            icon.classList.replace('fa-moon', 'fa-sun');
-            localStorage.setItem('theme', 'dark');
-        }
-
-        // Fade out overlay and remove
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-            document.body.removeChild(overlay);
-        }, 300);
-    }, 300);
-}

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><head>
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Read Story</title>
@@ -93,7 +94,7 @@
     </div>
 </div>
 
-<!-- Before the navigation buttons -->
+<!-- Progress container -->
 <div class="progress-container">
     <div class="progress-bar">
         <div class="progress-fill" id="progressFill"></div>
@@ -103,7 +104,7 @@
     </div>
 </div>
 
-<!-- Then the navigation buttons -->
+<!-- Navigation buttons -->
 <div class="navigation-buttons">
     <button onclick="previousPage()" class="btn btn-secondary" id="prevBtn" disabled>
         <i class="fas fa-chevron-left"></i> Previous
@@ -176,15 +177,27 @@
 <!-- Particle Container -->
 <div id="particle-container"></div>
 
+<!-- Reading indicator -->
+<div class="reading-indicator" id="readingIndicator">
+    <div class="indicator-icon">🔊</div>
+    <div class="indicator-dots">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+    </div>
+</div>
+
 <!-- Include story view JavaScript -->
 <script th:src="@{/js/storyview.js}"></script>
 <script th:src="@{/js/questions.js}"></script>
 
+<!-- ThymeLeaf data passing to JavaScript -->
 <script th:inline="javascript">
     // Pass Thymeleaf data to JavaScript
     const totalPages = [[${story.pages.size()}]];
     const questionsByPage = [[${questionsByPage}]];
 </script>
+
 <!-- Add interaction data if user is logged in -->
 <div id="interactionData" th:if="${interactionId != null}"
      th:data-interaction-id="${interactionId}" style="display: none;"></div>
