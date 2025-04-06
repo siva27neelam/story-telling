@@ -83,8 +83,7 @@
                  th:data-page-id="${page.id}">
 
                 <!-- Updated Image Display -->
-                <img th:if="${page.imageData != null}"
-                     th:src="@{/stories/image/{id}(id=${page.id})}"
+                <img th:src="@{/stories/image/{id}(id=${page.id})}"
                      class="story-image"
                      alt="Story illustration">
 

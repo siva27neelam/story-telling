@@ -73,7 +73,7 @@
 
                 <!-- Clickable cover image -->
                 <a th:href="@{/stories/view/{id}(id=${story.id})}" class="card-image-link">
-                    <img th:if="${story.hasCoverImage}" th:src="@{/stories/cover/{id}(id=${story.id})}"
+                    <img th:src="@{/stories/cover/{id}(id=${story.id})}"
                          class="card-img-top story-cover-image" alt="Story cover" loading="lazy">
                     <div th:unless="${story.hasCoverImage}" class="placeholder-cover">
                         <span>📚</span>

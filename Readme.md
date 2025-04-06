@@ -66,6 +66,8 @@ Cloudflare tunnels for exposing local network to internet.
 8. Now configure the host names and port
 9. Use zoho to configure the email
 
+Backup script
+/media/exthd1/mysqlbackup/script/backup_script.sh
 
 Start with the art style specification:
 "Create a vintage 1950s children's book illustration with bold black outlines, flat colors without shading, and the characteristic hand-painted print aesthetic with slight registration misalignments typical of mid-century children's books."

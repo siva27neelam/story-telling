@@ -288,7 +288,7 @@ function toggleTheme() {
 
     if (body.getAttribute('data-theme') === 'dark') {
         body.removeAttribute('data-theme');
-        icon.classList.replace('fa-sun', 'fa-moon');
+        icon.classList.replace('fa-sun',  'fa-moon');
         localStorage.setItem('theme', 'light');
     } else {
         body.setAttribute('data-theme', 'dark');
