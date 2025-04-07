@@ -1,4 +1,3 @@
-// StoryService.java - Updated to handle all fields
 package com.socialstory.service;
 
 import com.socialstory.model.*;
@@ -32,6 +31,7 @@ public class StoryService {
     private final QuestionService questionService;
     private final StoryArchiveRepository storyArchiveRepository;
     private final MinioStorageService minioStorageService;
+    private final ImageCompressionService imageCompressionService;
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
     public Story createStory(Story story, List<MultipartFile> pageImages, MultipartFile coverImage) {
@@ -45,11 +45,10 @@ public class StoryService {
         story.setStatus(Story.StoryStatus.DRAFT);
         story.setSubmittedForApprovalAt(LocalDateTime.now());
 
-        // Process cover image if provided
         if (coverImage != null && !coverImage.isEmpty()) {
             try {
-                // Store in database for now (will be migrated later)
-                story.setCoverImage(coverImage.getBytes());
+                byte[] compressedImage = imageCompressionService.compressImageWithTinyPNG(coverImage.getBytes());
+                story.setCoverImage(compressedImage);
                 story.setCoverImageType(coverImage.getContentType());
 
                 // If we're directly storing in MinIO
@@ -73,7 +72,9 @@ public class StoryService {
                         MultipartFile pageImage = pageImages.get(pageIndex);
 
                         // Store in database for now (will be migrated later)
-                        page.setImageData(pageImage.getBytes());
+                        byte[] compressedPageImage = imageCompressionService.compressImageWithTinyPNG(pageImage.getBytes());
+
+                        page.setImageData(compressedPageImage);
                         page.setImageType(pageImage.getContentType());
 
                         // If we're directly storing in MinIO
@@ -119,7 +120,9 @@ public class StoryService {
         if (coverImageFile != null && !coverImageFile.isEmpty()) {
             try {
                 // Handle database storage
-                existingStory.setCoverImage(coverImageFile.getBytes());
+                byte[] compressedImage = imageCompressionService.compressImageWithTinyPNG(coverImageFile.getBytes());
+
+                existingStory.setCoverImage(compressedImage);
                 existingStory.setCoverImageType(coverImageFile.getContentType());
 
                 // Handle MinIO storage
@@ -177,9 +180,10 @@ public class StoryService {
                         // New image uploaded
                         try {
                             MultipartFile imageFile = pageImages.get(i);
+                            byte[] compressedPageImage = imageCompressionService.compressImageWithTinyPNG(imageFile.getBytes());
 
                             // Database storage
-                            existingPage.setImageData(imageFile.getBytes());
+                            existingPage.setImageData(compressedPageImage);
                             existingPage.setImageType(imageFile.getContentType());
 
                             // MinIO storage - delete old image if exists
@@ -228,9 +232,10 @@ public class StoryService {
                     if (pageImages != null && i < pageImages.size() && !pageImages.get(i).isEmpty()) {
                         try {
                             MultipartFile imageFile = pageImages.get(i);
+                            byte[] compressedPageImage = imageCompressionService.compressImageWithTinyPNG(imageFile.getBytes());
 
                             // Database storage
-                            updatedPage.setImageData(imageFile.getBytes());
+                            updatedPage.setImageData(compressedPageImage);
                             updatedPage.setImageType(imageFile.getContentType());
 
                             // MinIO storage

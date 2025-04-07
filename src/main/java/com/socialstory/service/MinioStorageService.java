@@ -15,6 +15,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class MinioStorageService {
+    public MinioClient minioClient() {
+        return minioClient;
+    }
+
     public String getCoversBucket() {
         return coversBucket;
     }
@@ -193,6 +197,61 @@ public class MinioStorageService {
             return "webp";
         } else {
             return "jpg"; // Default extension
+        }
+    }
+
+    // Add these methods to MinioStorageService
+
+    /**
+     * Upload a cover image (overwrite if exists with same object name)
+     * @param imageData Image data
+     * @param contentType MIME type
+     * @param objectName The specific MinIO object name to use
+     */
+    public void uploadCoverImage(byte[] imageData, String contentType, String objectName) {
+        uploadImage(imageData, contentType, coversBucket, objectName);
+    }
+
+    /**
+     * Upload a page image (overwrite if exists with same object name)
+     * @param imageData Image data
+     * @param contentType MIME type
+     * @param objectName The specific MinIO object name to use
+     */
+    public void uploadPageImage(byte[] imageData, String contentType, String objectName) {
+        uploadImage(imageData, contentType, pagesBucket, objectName);
+    }
+
+    /**
+     * Upload image to MinIO with a specific object name
+     *
+     * @param imageData Image data as byte array
+     * @param contentType MIME type of the image
+     * @param bucket Bucket name to store the image
+     * @param objectName The specific object name to use (overwrite if exists)
+     */
+    private void uploadImage(byte[] imageData, String contentType, String bucket, String objectName) {
+        if (imageData == null || imageData.length == 0) {
+            throw new IllegalArgumentException("Image data cannot be null or empty");
+        }
+
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(imageData)) {
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put("Content-Type", contentType);
+
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .stream(inputStream, imageData.length, -1)
+                            .contentType(contentType)
+                            .headers(metadata)
+                            .build());
+
+            log.info("Successfully uploaded image to bucket: {}, object: {}", bucket, objectName);
+        } catch (Exception e) {
+            log.error("Error uploading image to MinIO: {}", e.getMessage(), e);
+            throw new RuntimeException("Error uploading image to MinIO", e);
         }
     }
 }
