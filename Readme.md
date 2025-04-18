@@ -89,3 +89,6 @@ Avoid ambiguity with measurements:
 "The character should be [specific size relationship] compared to [other element]."
 End with the purpose of the illustration:
 "This illustration should convey [specific emotion or story point] to the viewer."
+
+docker pull jellyfin/jellyfin:latest
+

@@ -1,0 +1,21 @@
+/*
+ * main.css - Main CSS file that imports all modular components
+ * Optimized CSS architecture for SleepyTales
+ */
+
+/* Import base styles and variables */
+@import url('base.css');
+
+/* Import layout and structure */
+@import url('layout.css');
+
+/* Import component styles */
+@import url('components.css');
+
+/* Import animations and effects */
+@import url('animations.css');
+
+/* Import utility classes */
+@import url('utilities.css');
+
+/* Additional custom styles can be added here */

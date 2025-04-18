@@ -1,0 +1,476 @@
+/*
+ * animations.css - Animations and visual effects
+ * Part of the optimized CSS structure for SleepyTales
+ */
+
+/* ========= Animations ========= */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(var(--primary-rgb, 164, 90, 82), 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0); }
+}
+
+@keyframes pulse-glow {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0.7); }
+    50% { transform: scale(1); box-shadow: 0 0 8px 4px rgba(var(--primary-rgb, 164, 90, 82), 0.5); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0.7); }
+}
+
+@keyframes float {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0.4; }
+    25% { transform: translateY(-15px) rotate(3deg); opacity: 0.7; }
+    50% { transform: translateY(-25px) rotate(5deg); opacity: 0.5; }
+    75% { transform: translateY(-10px) rotate(2deg); opacity: 0.6; }
+    100% { transform: translateY(0) rotate(0deg); opacity: 0.4; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    50% { transform: translateX(8px); }
+    75% { transform: translateX(-8px); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes subtle-bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-3px); }
+}
+
+@keyframes dot-pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+}
+
+@keyframes pulse-scale {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
+}
+
+/* ========= Floating Elements ========= */
+.floating-elements {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.floating-element {
+    position: absolute;
+    opacity: 0.6;
+    animation: float 15s ease-in-out infinite;
+    font-size: 40px;
+    pointer-events: none;
+}
+
+.cloud1 {
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+    font-size: 50px;
+}
+
+.cloud2 {
+    top: 30%;
+    right: 15%;
+    animation-delay: 3s;
+    font-size: 45px;
+}
+
+.cloud3 {
+    top: 60%;
+    left: 25%;
+    animation-delay: 6s;
+    font-size: 55px;
+    opacity: 0.4;
+}
+
+.star1 {
+    bottom: 20%;
+    left: 20%;
+    animation-delay: 1.5s;
+    color: var(--accent-warm);
+    font-size: 35px;
+}
+
+.star2 {
+    bottom: 30%;
+    right: 10%;
+    animation-delay: 4.5s;
+    color: var(--accent-warm);
+    font-size: 30px;
+}
+
+.star3 {
+    top: 45%;
+    right: 25%;
+    animation-delay: 7.5s;
+    color: var(--accent-warm);
+    font-size: 25px;
+}
+
+/* ========= Particle Effects ========= */
+#particle-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    opacity: 1;
+    transition: transform 3s ease-out, opacity 3s ease-out;
+    font-size: 40px;
+}
+
+.particle.tiny {
+    transition: transform 1.5s ease-out, opacity 1.5s ease-out;
+    z-index: 1001;
+}
+
+/* ========= Reading Indicator ========= */
+.reading-indicator {
+    position: fixed;
+    bottom: 120px;
+    right: 20px;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 10px 15px;
+    display: none;
+    align-items: center;
+    box-shadow: var(--shadow);
+    border: var(--border-width) solid var(--neutral-dark);
+    z-index: 990;
+    transition: all var(--transition);
+}
+
+.indicator-icon {
+    font-size: 24px;
+    margin-right: 10px;
+    animation: subtle-bounce 1s infinite alternate;
+}
+
+.indicator-dots {
+    display: flex;
+    align-items: center;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--neutral-medium);
+    border-radius: 50%;
+    margin: 0 3px;
+    opacity: 0.6;
+}
+
+.dot:nth-child(1) {
+    animation: dot-pulse 1.5s infinite 0s;
+}
+
+.dot:nth-child(2) {
+    animation: dot-pulse 1.5s infinite 0.3s;
+}
+
+.dot:nth-child(3) {
+    animation: dot-pulse 1.5s infinite 0.6s;
+}
+
+/* ========= Question Animations ========= */
+.question-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+
+.question-container {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    max-width: 90%;
+    width: 500px;
+    box-shadow: var(--shadow-lg);
+    border: 3px solid var(--accent-warm);
+    position: relative;
+    transform: translateY(20px);
+    transition: transform var(--transition);
+}
+
+.question-completed {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    border: 3px solid var(--accent-warm);
+    z-index: 2100;
+    opacity: 0;
+    transition: all 0.5s ease;
+    pointer-events: none;
+    max-width: 90%;
+    width: 400px;
+}
+
+.question-completed.show {
+    opacity: 1;
+    animation: pulse-scale 0.5s;
+}
+
+.celebration-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: bounce 1s infinite alternate;
+}
+
+.option-btn.correct {
+    background-color: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.option-btn.incorrect {
+    background-color: var(--error);
+    color: white;
+    border-color: var(--error);
+    animation: shake 0.5s;
+}
+
+/* ========= Magic Corner ========= */
+.magic-corner {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+}
+
+.magic-trigger {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    font-size: 24px;
+    box-shadow: var(--shadow);
+    transition: all var(--transition);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.magic-trigger:hover {
+    transform: rotate(30deg) scale(1.1);
+}
+
+.magic-menu {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+    opacity: 0;
+    transform: scale(0.5);
+    transform-origin: bottom right;
+    transition: all var(--transition);
+}
+
+.magic-item {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    box-shadow: var(--shadow);
+}
+
+.magic-item:nth-child(1) {
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+}
+
+.magic-item:nth-child(2) {
+    background: linear-gradient(45deg, #FF6B6B, #FF0066);
+}
+
+.magic-item:nth-child(3) {
+    background: linear-gradient(45deg, #9C27B0, #673AB7);
+}
+
+.magic-item:nth-child(4) {
+    background: linear-gradient(45deg, #FF416C, #FF4B2B);
+}
+
+.magic-item:hover {
+    transform: scale(1.15);
+}
+
+/* ========= Page Turn Effect ========= */
+.page-turn-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    pointer-events: none;
+    display: none;
+}
+
+.page-turn-fold {
+    position: absolute;
+    background-color: var(--page-color, #f0f0f0);
+    transform-origin: top left;
+}
+
+/* ========= Theme Transition Overlay ========= */
+.theme-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity var(--transition);
+    pointer-events: none;
+}
+
+/* ========= Read Aloud Button Animation ========= */
+.read-aloud-btn.playing {
+    animation: pulse 1.5s infinite;
+    background-color: var(--success);
+}
+
+/* ========= Word Highlighting for Read Aloud ========= */
+.story-text .word {
+    display: inline-block;
+    transition: all 0.2s ease-in-out;
+    padding: 0 2px;
+    border-radius: 3px;
+    line-height: 1.6;
+}
+
+.story-text .word.highlight {
+    background-color: var(--accent-warm);
+    color: var(--text-color);
+    font-weight: bold;
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+/* ========= Media Queries for Animations ========= */
+@media (max-width: 768px) {
+    .magic-corner {
+        bottom: 80px;
+        right: 20px;
+    }
+
+    .magic-trigger {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+
+    .magic-item {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .reading-indicator {
+        bottom: 80px;
+        right: 10px;
+        padding: 8px 12px;
+    }
+
+    .indicator-icon {
+        font-size: 20px;
+    }
+
+    .dot {
+        width: 6px;
+        height: 6px;
+        margin: 0 2px;
+    }
+
+    .story-text .word.highlight {
+        transform: scale(1.03);
+        padding: 0 1px;
+    }
+
+    .floating-element {
+        font-size: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .question-container {
+        width: 95%;
+        padding: 1.5rem;
+    }
+
+    .magic-corner {
+        bottom: 80px;
+        right: 10px;
+    }
+
+    .celebration-icon {
+        font-size: 3rem;
+    }
+}
+
+/* For reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .floating-element {
+        animation: none;
+    }
+
+    .particle {
+        transition: none;
+    }
+}
