@@ -191,7 +191,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Include your external JS file -->
-<script th:src="@{/js/story-creator.js}"></script>
+<div th:replace="fragments/common :: scripts"></div>
 
 <script>
     // Initialize on document load
@@ -199,7 +199,6 @@
         initializeCreator();
     });
 </script>
-<script th:src="@{/js/sidebar.js}"></script>
 
 </body>
 </html>

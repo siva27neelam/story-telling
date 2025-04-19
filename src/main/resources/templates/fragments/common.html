@@ -160,5 +160,8 @@
     <!-- Overlay for closing sidebar -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 </div>
+<div th:fragment="scripts">
+    <script th:src="@{/js/main-bundle.js}" defer></script>
+</div>
 </body>
 </html>

@@ -187,8 +187,8 @@
 </div>
 
 <!-- Include story view JavaScript -->
-<script th:src="@{/js/storyview.js}"></script>
-<script th:src="@{/js/questions.js}"></script>
+<script src="/js/main-bundle.js" defer></script>
+
 
 <!-- ThymeLeaf data passing to JavaScript -->
 <script th:inline="javascript">
@@ -200,7 +200,7 @@
 <!-- Add interaction data if user is logged in -->
 <div id="interactionData" th:if="${interactionId != null}"
      th:data-interaction-id="${interactionId}" style="display: none;"></div>
-<script th:src="@{/js/sidebar.js}"></script>
+<div th:replace="fragments/common :: scripts"></div>
 
 </body>
 </html>
