@@ -1,6 +1,5 @@
 /*
- * layout.css - Layout elements and structure
- * Part of the optimized CSS structure for SleepyTales
+ * layout.css - Essential Layout Elements (Optimized)
  */
 
 /* ========= Header ========= */
@@ -203,11 +202,6 @@
     background: linear-gradient(90deg, var(--primary), var(--secondary));
 }
 
-.footer-section p {
-    line-height: 1.6;
-    margin-bottom: 10px;
-}
-
 .social-icons {
     display: flex;
     gap: 15px;
@@ -288,7 +282,6 @@
 
 .view-mode .story-page.active {
     display: block;
-    animation: fadeIn 0.5s;
 }
 
 .story-image {
@@ -474,7 +467,6 @@
 
 .admin-section.active {
     display: block;
-    animation: fadeIn 0.5s;
 }
 
 .admin-section h2 {
@@ -520,6 +512,75 @@
     background-color: rgba(164, 90, 82, 0.05);
 }
 
+/* ========= Edit Link ========= */
+.edit-link {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+}
+
+.edit-link a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: var(--primary);
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    transition: all var(--transition);
+    box-shadow: var(--shadow-sm);
+}
+
+.edit-link a:hover {
+    background-color: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+/* ========= Delete Button ========= */
+.delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--error);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-size: 14px;
+    z-index: 10;
+}
+
+.delete-btn:hover {
+    background-color: #8B0000;
+    transform: scale(1.1);
+}
+
+/* ========= Question Section ========= */
+.question-section {
+    border-top: 2px solid var(--neutral-medium);
+    padding-top: 1rem;
+}
+
+.question-item {
+    border: 1px solid var(--neutral-medium);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 1rem;
+}
+
+.questions-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
 /* ========= Media Queries for Layout ========= */
 @media (max-width: 992px) {
     .admin-container {
@@ -532,7 +593,6 @@
         position: relative;
         top: 0;
         overflow-x: auto;
-        white-space: nowrap;
         border-right: none;
         border-bottom: var(--border-width) solid var(--neutral-dark);
         padding: 10px 0;

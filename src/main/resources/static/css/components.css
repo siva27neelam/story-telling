@@ -1,6 +1,5 @@
 /*
- * components.css - UI Components
- * Part of the optimized CSS structure for SleepyTales
+ * components.css - Essential UI Components (Optimized)
  */
 
 /* ========= Buttons ========= */
@@ -12,7 +11,6 @@
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
-    text-align: center;
     text-decoration: none;
     border: none;
     border-radius: 25px;
@@ -43,11 +41,6 @@
 
 .btn-secondary {
     background-color: var(--secondary);
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: var(--secondary-dark);
     color: white;
 }
 
@@ -83,10 +76,10 @@
     transform: none;
 }
 
-/* Button with special hover effects */
 .btn-questions {
     background-color: var(--accent-warm);
     color: var(--neutral-darkest);
+    position: relative;
 }
 
 .btn-questions.has-questions::after {
@@ -167,11 +160,6 @@
     width: 100px;
 }
 
-.card-text {
-    color: var(--text-color);
-}
-
-/* Card image link */
 .card-image-link {
     display: block;
     height: 200px;
@@ -215,12 +203,6 @@
     color: var(--text-color);
 }
 
-.alert-warning {
-    background-color: rgba(185, 130, 79, 0.2);
-    border-color: var(--warning);
-    color: var(--text-color);
-}
-
 .alert-danger {
     background-color: rgba(164, 90, 82, 0.2);
     border-color: var(--error);
@@ -235,7 +217,6 @@
 .input-group {
     position: relative;
     display: flex;
-    flex-wrap: wrap;
     align-items: stretch;
     width: 100%;
 }
@@ -244,11 +225,6 @@
     display: flex;
     align-items: center;
     padding: 0.75rem 1rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: var(--text-color);
-    text-align: center;
     background-color: var(--neutral-light);
     border: var(--border-width) solid var(--neutral-medium);
     border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
@@ -265,7 +241,6 @@
     width: 1em;
     height: 1em;
     margin-top: 0.25em;
-    vertical-align: top;
     background-color: var(--card-bg);
     border: var(--border-width) solid var(--neutral-medium);
     appearance: none;
@@ -274,10 +249,6 @@
 .form-check-input:checked {
     background-color: var(--primary);
     border-color: var(--primary);
-}
-
-.form-check-label {
-    font-weight: 400;
 }
 
 /* ========= Navigation Buttons ========= */
@@ -354,10 +325,7 @@
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     font-weight: 600;
-    line-height: 1;
     text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
     border-radius: var(--border-radius-sm);
 }
 
@@ -408,7 +376,7 @@
     background-color: var(--card-bg);
     border: var(--border-width) solid var(--neutral-dark);
     border-radius: var(--border-radius-sm);
-    transition: all var(--transition-fast);
+    transition: all var(--transition);
 }
 
 .page-link:hover {
@@ -426,8 +394,6 @@
 
 .page-item.disabled .page-link {
     color: var(--neutral-medium);
-    background-color: var(--card-bg);
-    border-color: var(--neutral-medium);
     cursor: not-allowed;
 }
 
@@ -439,24 +405,23 @@
     box-shadow: var(--shadow-lg);
 }
 
-.modal-header {
-    border-bottom: 1px solid var(--neutral-medium);
+.modal-header, .modal-body, .modal-footer {
     padding: 1.5rem;
 }
 
-.modal-body {
-    padding: 1.5rem;
+.modal-header {
+    border-bottom: 1px solid var(--neutral-medium);
 }
 
 .modal-footer {
     border-top: 1px solid var(--neutral-medium);
-    padding: 1.5rem;
 }
 
 .modal-title {
     color: var(--text-color);
 }
 
+/* PIN Container */
 .pin-container {
     display: flex;
     align-items: center;
@@ -474,7 +439,7 @@
     color: var(--text-color);
     border: var(--border-width) solid var(--neutral-medium);
     border-radius: var(--border-radius-sm);
-    transition: all var(--transition-fast);
+    transition: all var(--transition);
 }
 
 .pin-input:focus {
@@ -483,7 +448,7 @@
     transform: scale(1.05);
 }
 
-/* ========= Media Queries for Components ========= */
+/* ========= Media Queries ========= */
 @media (max-width: 768px) {
     .navigation-buttons {
         bottom: 0;
@@ -536,7 +501,7 @@
     }
 }
 
-/* ========= Media Queries - Landscape Mode ========= */
+/* Landscape mode adjustments */
 @media (max-height: 500px) and (orientation: landscape) {
     .navigation-buttons {
         position: static;

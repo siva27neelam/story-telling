@@ -1,164 +1,198 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
 <head>
-    <title>Children's Stories</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <!-- Critical CSS -->
-    <style>
-        /* Critical CSS code here */
-    </style>
+    <!-- SEO Meta Tags -->
+    <title>Interactive Children's Stories | SleepyTales</title>
+    <meta name="description" content="Discover engaging, interactive children's stories on SleepyTales. Read stories with questions, create your own, and join our storytelling community.">
+    <meta name="keywords" content="children stories, bedtime stories, interactive stories, storytelling, reading, kids books">
 
-    <!-- Deferred CSS loading -->
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" th:href="@{/css/main.css}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="Interactive Children's Stories | SleepyTales">
+    <meta property="og:description" content="Discover engaging, interactive children's stories with questions and beautiful illustrations.">
+    <meta property="og:image" content="/images/sleepytales-stories.jpg">
+    <meta property="og:type" content="website">
 
-    <!-- Fallback for preload not supported -->
-    <noscript>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
-        <link rel="stylesheet" th:href="@{/css/main.css}">
-    </noscript>
+    <!-- Performance Head -->
+    <div th:replace="fragments/common :: performance-head"></div>
 </head>
 <body>
-<!-- Header -->
-<!-- Include Header Fragment -->
+<!-- Skip Link for Accessibility -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Include Header -->
 <div th:replace="fragments/common :: header"></div>
 
-<!-- Include Sidebar Fragment -->
+<!-- Include Sidebar -->
 <div th:replace="fragments/common :: sidebar"></div>
+<div th:replace="fragments/common :: sidebar-overlay"></div>
 
-<!-- Floating Elements - initially hidden -->
-<div class="floating-elements" style="display:none;">
-    <div class="floating-element cloud1">☁️</div>
-    <div class="floating-element cloud2">☁️</div>
-    <div class="floating-element star1">⭐</div>
-    <div class="floating-element star2">✨</div>
-    <div class="floating-element cloud3">☁️</div>
-    <div class="floating-element star3">✨</div>
-</div>
-
-<div class="container mt-5">
-    <div class="stories-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Story Collection</h2><br>
-            <a href="/stories/create" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Create New Story
+<!-- Main Content -->
+<main id="main-content" class="container mt-5">
+    <!-- Stories Header -->
+    <header class="stories-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Story Collection</h1>
+            <a href="/stories/create" class="btn btn-primary" sec:authorize="isAuthenticated()"
+               aria-label="Create a new story">
+                <i class="fas fa-plus" aria-hidden="true"></i> Create New Story
             </a>
         </div>
-    </div>
+    </header>
 
-    <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+    <!-- Success Message -->
+    <div class="alert alert-success" th:if="${message}" th:text="${message}" role="alert"></div>
 
-    <div class="row">
-        <div class="col-md-4 mb-4" th:each="story : ${stories}">
-            <!-- Skeleton loader -->
-            <div class="card h-100 story-skeleton">
-                <div class="skeleton"></div>
-                <div class="card-body">
-                    <div class="skeleton-text"></div>
+    <!-- Stories Grid -->
+    <section class="stories-grid" aria-label="Available stories">
+        <div class="row">
+            <article class="col-md-4 mb-4" th:each="story : ${stories}">
+
+                <!-- Loading Placeholder (Simple) -->
+                <div class="loading-placeholder" style="display: none;">
+                    <div class="card h-100">
+                        <div class="loading" style="height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                            Loading...
+                        </div>
+                        <div class="card-body">
+                            <div class="loading" style="height: 20px; background: #f0f0f0; margin: 10px 0;"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Actual content (initially hidden) -->
-            <div class="card h-100 story-content" style="display:none;">
-                <!-- Unread indicator for logged-in users -->
-                <div th:if="${unreadStories != null && unreadStories.contains(story.id)}"
-                     class="unread-indicator" title="New story - you haven't read this yet"></div>
+                <!-- Story Card -->
+                <div class="card h-100 story-card">
+                    <!-- Unread indicator for logged-in users -->
+                    <div th:if="${unreadStories != null && unreadStories.contains(story.id)}"
+                         class="unread-indicator"
+                         title="New story - you haven't read this yet"
+                         aria-label="New unread story"></div>
 
-                <!-- Clickable cover image -->
-                <a th:href="@{/stories/view/{id}(id=${story.id})}" class="card-image-link">
-                    <img th:src="@{/stories/cover/{id}(id=${story.id})}"
-                         class="card-img-top story-cover-image" alt="Story cover" loading="lazy">
-                    <div th:unless="${story.hasCoverImage}" class="placeholder-cover">
-                        <span>📚</span>
-                    </div>
-                </a>
-
-                <div class="card-body">
-                    <h5 class="card-title" th:text="${story.title}">Story Title</h5>
-
-                    <!-- Tags display -->
-                    <div class="story-tags" th:if="${story.tags != null && !story.tags.isEmpty()}">
-                        <span class="tag" th:each="tag : ${#strings.arraySplit(story.tags, ',')}" th:text="${#strings.trim(tag)}">tag</span>
-                    </div>
-
-                    <!-- Edit button as an icon -->
+                    <!-- Edit link for authorized users -->
                     <div class="edit-link"
                          th:if="${session.currentUser != null && (session.isAdmin == true || story.changedBy == session.currentUser.email)}">
-                        <a th:href="@{/stories/edit/{id}(id=${story.id})}" title="Edit Story">
-                            <i class="fas fa-edit"></i>
+                        <a th:href="@{/stories/edit/{id}(id=${story.id})}"
+                           title="Edit Story"
+                           aria-label="Edit this story">
+                            <i class="fas fa-edit" aria-hidden="true"></i>
                         </a>
                     </div>
+
+                    <!-- Story Cover Image -->
+                    <a th:href="@{/stories/view/{id}(id=${story.id})}"
+                       class="card-image-link"
+                       th:attr="aria-label='Read story: ' + ${story.title}">
+                        <img th:if="${story.hasCoverImage}"
+                             th:src="@{/stories/cover/{id}(id=${story.id})}"
+                             class="card-img-top story-cover-image"
+                             th:alt="'Cover image for ' + ${story.title}"
+                             loading="lazy"
+                             width="300"
+                             height="200">
+                        <div th:unless="${story.hasCoverImage}"
+                             class="placeholder-cover"
+                             aria-label="No cover image available">
+                            <span aria-hidden="true">📚</span>
+                        </div>
+                    </a>
+
+                    <!-- Story Content -->
+                    <div class="card-body">
+                        <h2 class="card-title" th:text="${story.title}">Story Title</h2>
+
+                        <!-- Tags display -->
+                        <div class="story-tags" th:if="${story.tags != null && !story.tags.isEmpty()}">
+                                <span class="tag"
+                                      th:each="tag : ${#strings.arraySplit(story.tags, ',')}"
+                                      th:text="${#strings.trim(tag)}"
+                                      th:attr="aria-label='Tag: ' + ${#strings.trim(tag)}">tag</span>
+                        </div>
+
+                        <!-- Story Meta -->
+                        <div class="story-meta" th:if="${story.changedBy != null}">
+                            <small class="text-muted">
+                                by <span th:text="${story.changedBy}">Author</span>
+                            </small>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </article>
         </div>
+    </section>
+
+    <!-- Pagination -->
+    <nav aria-label="Story pages navigation" th:if="${totalPages > 1}">
+        <ul class="pagination justify-content-center">
+            <!-- Previous button -->
+            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                <a class="page-link"
+                   th:href="@{/stories(page=${currentPage - 1})}"
+                   aria-label="Previous page"
+                   th:attr="aria-disabled=${currentPage == 0}">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            <!-- Page numbers -->
+            <li class="page-item"
+                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                th:classappend="${currentPage == i} ? 'active' : ''">
+                <a class="page-link"
+                   th:href="@{/stories(page=${i})}"
+                   th:text="${i + 1}"
+                   th:attr="aria-label='Page ' + ${i + 1}, aria-current=${currentPage == i ? 'page' : null}">1</a>
+            </li>
+
+            <!-- Next button -->
+            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
+                <a class="page-link"
+                   th:href="@{/stories(page=${currentPage + 1})}"
+                   aria-label="Next page"
+                   th:attr="aria-disabled=${currentPage == totalPages - 1}">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Empty State -->
+    <div th:if="${stories.empty}" class="text-center py-5">
+        <h2>No stories available</h2>
+        <p class="text-muted">Be the first to create a story!</p>
+        <a href="/stories/create" class="btn btn-primary" sec:authorize="isAuthenticated()">
+            <i class="fas fa-plus" aria-hidden="true"></i> Create Your First Story
+        </a>
     </div>
-</div>
+</main>
 
-<div class="row">
-    <div class="col-md-12">
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center" th:if="${totalPages > 1}">
-                <!-- Previous button -->
-                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
-                    <a class="page-link" th:href="@{/stories(page=${currentPage - 1})}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-
-                <!-- Page numbers -->
-                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
-                    th:classappend="${currentPage == i} ? 'active' : ''">
-                    <a class="page-link" th:href="@{/stories(page=${i})}" th:text="${i + 1}"></a>
-                </li>
-
-                <!-- Next button -->
-                <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
-                    <a class="page-link" th:href="@{/stories(page=${currentPage + 1})}" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-</div>
-
-<!-- Magic Corner Menu -->
-<div class="magic-corner">
-    <button onclick="toggleMagicMenu()" class="btn magic-trigger">
-        <i class="fas fa-magic"></i>
-    </button>
-    <div class="magic-menu" id="magicMenu">
-        <button class="magic-item" onclick="createShower('⭐')">
-            <i class="fas fa-star"></i>
-        </button>
-        <button class="magic-item" onclick="createShower('❤️')">
-            <i class="fas fa-heart"></i>
-        </button>
-        <button class="magic-item" onclick="createShower('🎈')">
-            <i class="fas fa-birthday-cake"></i>
-        </button>
-        <button class="magic-item" onclick="createShower('🌈')">
-            <i class="fas fa-rainbow"></i>
-        </button>
-    </div>
-</div>
-
-<!-- Particle Container -->
-<div id="particle-container"></div>
-
+<!-- Include Footer -->
 <div th:replace="fragments/common :: footer"></div>
 
-<!-- JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script th:src="@{/js/main.js}" defer></script>
-<script th:src="@{/js/sidebar.js}" defer></script>
-<script th:src="@{/js/forms.js}" defer></script>
+<!-- Essential Scripts Only -->
+<div th:replace="fragments/common :: essential-scripts"></div>
+
+<!-- Simple page-specific JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Simple fade-in for story cards
+        const cards = document.querySelectorAll('.story-card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            }, index * 100);
+        });
+    });
+</script>
 </body>
 </html>

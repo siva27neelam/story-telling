@@ -1,24 +1,23 @@
 /*
- * animations.css - Animations and visual effects
- * Part of the optimized CSS structure for SleepyTales
+ * animations.css - Essential Animations and Effects (Optimized)
  */
 
-/* ========= Animations ========= */
+/* ========= Core Animations ========= */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(var(--primary-rgb, 164, 90, 82), 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0); }
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(164, 90, 82, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(164, 90, 82, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(164, 90, 82, 0); }
 }
 
 @keyframes pulse-glow {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0.7); }
-    50% { transform: scale(1); box-shadow: 0 0 8px 4px rgba(var(--primary-rgb, 164, 90, 82), 0.5); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 164, 90, 82), 0.7); }
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(164, 90, 82, 0.7); }
+    50% { transform: scale(1); box-shadow: 0 0 8px 4px rgba(164, 90, 82, 0.5); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(164, 90, 82, 0.7); }
 }
 
 @keyframes float {
@@ -253,6 +252,27 @@
     animation: bounce 1s infinite alternate;
 }
 
+.option-btn {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    background-color: var(--card-bg);
+    border: 2px solid var(--neutral-medium);
+    border-radius: var(--border-radius);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.option-btn:hover {
+    background-color: var(--accent-warm);
+    border-color: var(--primary);
+    transform: scale(1.02);
+}
+
 .option-btn.correct {
     background-color: var(--success);
     color: white;
@@ -264,6 +284,42 @@
     color: white;
     border-color: var(--error);
     animation: shake 0.5s;
+}
+
+.question-badge {
+    position: absolute;
+    top: -15px;
+    left: 20px;
+    background-color: var(--primary);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.question-title {
+    margin: 1rem 0;
+    color: var(--text-color);
+    font-size: 1.2rem;
+}
+
+.question-text {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.feedback {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 1rem;
+    font-size: 1.1rem;
 }
 
 /* ========= Magic Corner ========= */
@@ -340,60 +396,10 @@
     transform: scale(1.15);
 }
 
-/* ========= Page Turn Effect ========= */
-.page-turn-effect {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1000;
-    pointer-events: none;
-    display: none;
-}
-
-.page-turn-fold {
-    position: absolute;
-    background-color: var(--page-color, #f0f0f0);
-    transform-origin: top left;
-}
-
-/* ========= Theme Transition Overlay ========= */
-.theme-transition-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.2);
-    z-index: 9999;
-    opacity: 0;
-    transition: opacity var(--transition);
-    pointer-events: none;
-}
-
 /* ========= Read Aloud Button Animation ========= */
 .read-aloud-btn.playing {
     animation: pulse 1.5s infinite;
     background-color: var(--success);
-}
-
-/* ========= Word Highlighting for Read Aloud ========= */
-.story-text .word {
-    display: inline-block;
-    transition: all 0.2s ease-in-out;
-    padding: 0 2px;
-    border-radius: 3px;
-    line-height: 1.6;
-}
-
-.story-text .word.highlight {
-    background-color: var(--accent-warm);
-    color: var(--text-color);
-    font-weight: bold;
-    transform: scale(1.05);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 10;
 }
 
 /* ========= Media Queries for Animations ========= */
@@ -429,11 +435,6 @@
         width: 6px;
         height: 6px;
         margin: 0 2px;
-    }
-
-    .story-text .word.highlight {
-        transform: scale(1.03);
-        padding: 0 1px;
     }
 
     .floating-element {

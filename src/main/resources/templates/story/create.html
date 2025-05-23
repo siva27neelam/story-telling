@@ -1,163 +1,176 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><head>
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Create Story</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-    <link th:href="@{/css/main.css}" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- SEO Meta Tags -->
+    <title>Create New Story | SleepyTales</title>
+    <meta name="description" content="Create your own interactive children's story on SleepyTales. Add pages, images, and questions to engage young readers.">
+
+    <!-- Performance Head -->
+    <div th:replace="fragments/common :: performance-head"></div>
 </head>
 <body>
-<!-- Hamburger Menu -->
-<div class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
-    <i class="fas fa-bars"></i>
-</div>
+<!-- Skip Link for Accessibility -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
-<!-- Sidebar -->
-<div class="sidebar" id="sidebar">
-    <ul class="sidebar-menu">
-        <!-- User info if logged in -->
-        <li sec:authorize="isAuthenticated()">
-            <div class="user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-name" sec:authentication="name">User</div>
-            </div>
-        </li>
+<!-- Include Header -->
+<div th:replace="fragments/common :: header"></div>
 
-        <!-- Login/Logout option -->
-        <li sec:authorize="!isAuthenticated()">
-            <a href="/login">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
-        </li>
-        <li sec:authorize="isAuthenticated()">
-            <a href="/logout">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </li>
+<!-- Include Sidebar -->
+<div th:replace="fragments/common :: sidebar"></div>
+<div th:replace="fragments/common :: sidebar-overlay"></div>
 
-        <!-- Theme toggle -->
-        <li>
-            <a href="javascript:void(0)" onclick="toggleThemeFromSidebar()">
-                <i class="fas fa-moon" id="sidebarThemeIcon"></i> Change Theme
-            </a>
-        </li>
-
-        <!-- Admin menu option -->
-        <li sec:authorize="isAuthenticated()">
-            <a href="/admin">
-                <i class="fas fa-shield-alt"></i> Admin Menu
-            </a>
-        </li>
-    </ul>
-</div>
-<!-- Overlay for closing sidebar -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-<div class="container mt-5">
+<!-- Main Content -->
+<main id="main-content" class="container mt-5">
     <div class="story-container">
-        <h2 class="mb-4">Create New Story</h2>
+        <header>
+            <h1 class="mb-4">Create New Story</h1>
+            <p class="text-muted">Share your creativity with the SleepyTales community</p>
+        </header>
 
-        <form th:action="@{/stories/create}" method="post" enctype="multipart/form-data" id="storyForm">
-            <!-- Title -->
+        <form th:action="@{/stories/create}" method="post" enctype="multipart/form-data"
+              id="storyForm" novalidate>
+
+            <!-- Story Title -->
             <div class="mb-4">
-                <label for="title" class="form-label">Story Title</label>
-                <input type="text" class="form-control" id="title" name="title" required>
+                <label for="title" class="form-label">Story Title *</label>
+                <input type="text" class="form-control" id="title" name="title"
+                       required aria-describedby="title-help"
+                       placeholder="Enter an engaging title for your story">
+                <div id="title-help" class="form-text">Choose a title that will capture children's imagination</div>
+                <div class="invalid-feedback">Please provide a story title.</div>
             </div>
 
             <!-- Tags -->
             <div class="mb-4">
-                <label for="tags" class="form-label">Tags (comma separated)</label>
-                <input type="text" class="form-control" id="tags" name="tags" placeholder="adventure, animals, friendship">
+                <label for="tags" class="form-label">Tags</label>
+                <input type="text" class="form-control" id="tags" name="tags"
+                       aria-describedby="tags-help"
+                       placeholder="adventure, animals, friendship">
+                <div id="tags-help" class="form-text">Add tags separated by commas to help readers find your story</div>
             </div>
 
             <!-- Cover Image -->
             <div class="mb-4">
-                <label class="form-label">Cover Image</label>
-                <input type="file" class="form-control" name="coverImageFile" accept="image/*" onchange="previewCoverImage(this)">
+                <label for="coverImageFile" class="form-label">Cover Image</label>
+                <input type="file" class="form-control" id="coverImageFile" name="coverImageFile"
+                       accept="image/*" aria-describedby="cover-help">
+                <div id="cover-help" class="form-text">Upload an eye-catching cover image (optional)</div>
                 <img class="preview-image" id="coverPreview" style="display: none;" alt="Cover preview"/>
             </div>
 
-            <!-- Pages Container -->
-            <div id="pagesContainer">
-                <!-- Story pages will be added here -->
-            </div>
+            <!-- Story Pages Container -->
+            <fieldset>
+                <legend class="h4 mb-3">Story Pages</legend>
+                <div id="pagesContainer" role="group" aria-label="Story pages">
+                    <!-- Pages will be added here by JavaScript -->
+                </div>
 
-            <button type="button" class="btn btn-secondary mb-3" onclick="addPage()">
-                <i class="fas fa-plus"></i> Add Page
-            </button>
+                <button type="button" class="btn btn-secondary mb-4" onclick="addPage()"
+                        aria-label="Add a new page to your story">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Add Page
+                </button>
+            </fieldset>
 
-            <div class="d-flex justify-content-end gap-2">
-                <a href="/stories" class="btn btn-light">Cancel</a>
-                <button type="submit" class="btn btn-primary">Save Story</button>
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-end gap-3 mt-4">
+                <a href="/stories" class="btn btn-light">
+                    <i class="fas fa-times" aria-hidden="true"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save" aria-hidden="true"></i> Create Story
+                </button>
             </div>
         </form>
     </div>
-</div>
+</main>
 
-<!-- Page Template -->
+<!-- Simplified Page Template -->
 <template id="pageTemplate">
-    <div class="story-page">
-        <div class="delete-btn" onclick="deletePage(this)">
-            <i class="fas fa-trash"></i>
-        </div>
-
-        <h4>Page {pageNumber}</h4>
-
-        <div class="mb-3">
-            <label class="form-label">Page Text</label>
-            <textarea class="form-control" name="pages[{index}].text" rows="3" required></textarea>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Image</label>
-            <input type="file" class="form-control" name="imageFile" accept="image/*" onchange="previewImage(this)">
-            <img class="preview-image" style="display: none;" alt="Page image preview"/>
-        </div>
-
-        <!-- Questions Section -->
-        <div class="mb-3 mt-4 question-section">
-            <hr>
-            <h5 class="mb-3">
-                <i class="fas fa-question-circle"></i> Questions for this Page
-                <button type="button" class="btn btn-sm btn-questions ms-2" onclick="addQuestion(this)">
-                    <i class="fas fa-plus"></i> Add Question
+    <div class="story-page mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Page {pageNumber}</h4>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        onclick="deletePage(this)" aria-label="Delete this page">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
                 </button>
-            </h5>
+            </div>
 
-            <div class="questions-container">
-                <!-- Questions will be added here -->
+            <div class="card-body">
+                <!-- Page Text -->
+                <div class="mb-3">
+                    <label class="form-label">Page Text *</label>
+                    <textarea class="form-control" name="pages[{index}].text"
+                              rows="3" required placeholder="Write your story text for this page..."
+                              aria-label="Text content for page {pageNumber}"></textarea>
+                    <div class="invalid-feedback">Please add text for this page.</div>
+                </div>
+
+                <!-- Page Image -->
+                <div class="mb-3">
+                    <label class="form-label">Page Image</label>
+                    <input type="file" class="form-control" name="imageFile"
+                           accept="image/*" aria-label="Upload image for page {pageNumber}">
+                    <img class="preview-image" style="display: none;" alt="Page image preview"/>
+                </div>
+
+                <!-- Questions Section -->
+                <div class="questions-section mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-question-circle" aria-hidden="true"></i>
+                            Questions for this Page
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                onclick="addQuestion(this)"
+                                aria-label="Add question for page {pageNumber}">
+                            <i class="fas fa-plus" aria-hidden="true"></i> Add Question
+                        </button>
+                    </div>
+
+                    <div class="questions-container">
+                        <!-- Questions will be added here -->
+                    </div>
+                </div>
+
+                <!-- Hidden page order field -->
+                <input type="hidden" name="pages[{index}].pageOrder" value="{index}">
             </div>
         </div>
     </div>
 </template>
 
-<!-- Question Template -->
+<!-- Simplified Question Template -->
 <template id="questionTemplate">
     <div class="question-item mb-3">
-        <div class="card">
+        <div class="card border-secondary">
             <div class="card-body">
-                <input type="hidden" name="pages[{pageIndex}].questions[{questionIndex}].id" value="" />
+                <input type="hidden" name="pages[{pageIndex}].questions[{questionIndex}].id" value="">
 
+                <!-- Question Text -->
                 <div class="mb-3">
                     <label class="form-label">Question</label>
                     <input type="text" class="form-control"
                            name="pages[{pageIndex}].questions[{questionIndex}].text"
-                           placeholder="Enter your question here" required>
+                           placeholder="What question would you like to ask about this page?"
+                           required aria-label="Question text">
+                    <div class="invalid-feedback">Please enter a question.</div>
                 </div>
 
+                <!-- Answer Options -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Option 1</label>
+                        <label class="form-label">Option 1 (Correct Answer)</label>
                         <div class="input-group">
                             <div class="input-group-text">
                                 <input type="radio" class="form-check-input mt-0"
                                        name="pages[{pageIndex}].questions[{questionIndex}].correctOptionIndex"
-                                       value="0" checked required>
+                                       value="0" checked required aria-label="Mark option 1 as correct">
                             </div>
                             <input type="text" class="form-control"
                                    name="pages[{pageIndex}].questions[{questionIndex}].option1"
@@ -165,41 +178,71 @@
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Option 2</label>
+                        <label class="form-label">Option 2 (Incorrect Answer)</label>
                         <div class="input-group">
                             <div class="input-group-text">
                                 <input type="radio" class="form-check-input mt-0"
                                        name="pages[{pageIndex}].questions[{questionIndex}].correctOptionIndex"
-                                       value="1" required>
+                                       value="1" required aria-label="Mark option 2 as correct">
                             </div>
                             <input type="text" class="form-control"
                                    name="pages[{pageIndex}].questions[{questionIndex}].option2"
-                                   placeholder="Wrong answer" required>
+                                   placeholder="Incorrect answer" required>
                         </div>
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
-                    <i class="fas fa-trash"></i> Remove Question
+                <!-- Remove Question Button -->
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        onclick="removeQuestion(this)" aria-label="Remove this question">
+                    <i class="fas fa-trash" aria-hidden="true"></i> Remove Question
                 </button>
             </div>
         </div>
     </div>
 </template>
 
-<!-- Include Bootstrap -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Include Footer -->
+<div th:replace="fragments/common :: footer"></div>
 
-<!-- Include your external JS file -->
-<script th:src="@{/js/story-creator.js}"></script>
+<!-- Essential Scripts -->
+<div th:replace="fragments/common :: essential-scripts"></div>
 
+<!-- Form Scripts -->
+<div th:replace="fragments/common :: form-scripts"></div>
+
+<!-- Form Validation Enhancement -->
 <script>
-    // Initialize on document load
     document.addEventListener('DOMContentLoaded', () => {
-        initializeCreator();
+        const form = document.getElementById('storyForm');
+
+        // Enhanced form validation
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                // Focus first invalid field
+                const firstInvalid = form.querySelector(':invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+            form.classList.add('was-validated');
+        });
+
+        // Real-time validation feedback
+        const inputs = form.querySelectorAll('input[required], textarea[required]');
+        inputs.forEach(input => {
+            input.addEventListener('blur', () => {
+                if (input.value.trim()) {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                }
+            });
+        });
     });
 </script>
-<script th:src="@{/js/sidebar.js}"></script>
-
 </body>
 </html>
