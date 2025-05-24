@@ -1,6 +1,7 @@
 package com.socialstory.service;
 
 import io.minio.*;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,41 +16,31 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class MinioStorageService {
-    public MinioClient minioClient() {
-        return minioClient;
-    }
-
-    public String getCoversBucket() {
-        return coversBucket;
-    }
-
-    public void setCoversBucket(String coversBucket) {
-        this.coversBucket = coversBucket;
-    }
-
-    public String getPagesBucket() {
-        return pagesBucket;
-    }
-
-    public void setPagesBucket(String pagesBucket) {
-        this.pagesBucket = pagesBucket;
-    }
 
     private final MinioClient minioClient;
 
+    // Getter methods for bucket names (for compatibility)
+    @Getter
     @Value("${minio.bucket.covers}")
     private String coversBucket;
 
+    @Getter
     @Value("${minio.bucket.pages}")
     private String pagesBucket;
 
+    // Add CDN URLs for both buckets
+    @Value("${minio.covers-url:}")
+    private String coversUrl;
+
+    @Value("${minio.pages-url:}")
+    private String pagesUrl;
+
+    // Fallback to single URL if separate URLs not configured
+    @Value("${minio.public-url:}")
+    private String publicUrl;
+
     /**
-     * Upload image to MinIO
-     *
-     * @param imageData Image data as byte array
-     * @param contentType MIME type of the image
-     * @param bucket Bucket name to store the image
-     * @return Object name (path) in MinIO
+     * Upload image to R2/MinIO
      */
     public String uploadImage(byte[] imageData, String contentType, String bucket) {
         if (imageData == null || imageData.length == 0) {
@@ -75,17 +66,13 @@ public class MinioStorageService {
             return objectName;
 
         } catch (Exception e) {
-            log.error("Error uploading image to MinIO: {}", e.getMessage(), e);
-            throw new RuntimeException("Error uploading image to MinIO", e);
+            log.error("Error uploading image: {}", e.getMessage(), e);
+            throw new RuntimeException("Error uploading image", e);
         }
     }
 
     /**
      * Upload a story cover image
-     *
-     * @param imageData Image data
-     * @param contentType MIME type
-     * @return Object name in MinIO
      */
     public String uploadCoverImage(byte[] imageData, String contentType) {
         return uploadImage(imageData, contentType, coversBucket);
@@ -93,21 +80,13 @@ public class MinioStorageService {
 
     /**
      * Upload a story page image
-     *
-     * @param imageData Image data
-     * @param contentType MIME type
-     * @return Object name in MinIO
      */
     public String uploadPageImage(byte[] imageData, String contentType) {
         return uploadImage(imageData, contentType, pagesBucket);
     }
 
     /**
-     * Get image data from MinIO
-     *
-     * @param objectName Object name (path)
-     * @param bucket Bucket name
-     * @return Image data as byte array
+     * Get image data from storage
      */
     public byte[] getImage(String objectName, String bucket) {
         try {
@@ -119,16 +98,13 @@ public class MinioStorageService {
 
             return response.readAllBytes();
         } catch (Exception e) {
-            log.error("Error getting image from MinIO: {}", e.getMessage(), e);
-            throw new RuntimeException("Error getting image from MinIO", e);
+            log.error("Error getting image: {}", e.getMessage(), e);
+            throw new RuntimeException("Error getting image", e);
         }
     }
 
     /**
      * Get a story cover image
-     *
-     * @param objectName Object name
-     * @return Image data
      */
     public byte[] getCoverImage(String objectName) {
         return getImage(objectName, coversBucket);
@@ -136,19 +112,45 @@ public class MinioStorageService {
 
     /**
      * Get a story page image
-     *
-     * @param objectName Object name
-     * @return Image data
      */
     public byte[] getPageImage(String objectName) {
         return getImage(objectName, pagesBucket);
     }
 
     /**
-     * Delete image from MinIO
-     *
-     * @param objectName Object name (path)
-     * @param bucket Bucket name
+     * Get CDN URL for cover image
+     */
+    public String getPublicCoverImageUrl(String objectName) {
+        if (coversUrl != null && !coversUrl.isEmpty()) {
+            // Use dedicated covers CDN URL
+            return coversUrl + "/" + objectName;
+        } else if (publicUrl != null && !publicUrl.isEmpty()) {
+            // Use single CDN URL with path
+            return publicUrl + "/covers/" + objectName;
+        } else {
+            // No CDN configured, return null (will use controller endpoints)
+            return null;
+        }
+    }
+
+    /**
+     * Get CDN URL for page image
+     */
+    public String getPublicPageImageUrl(String objectName) {
+        if (pagesUrl != null && !pagesUrl.isEmpty()) {
+            // Use dedicated pages CDN URL
+            return pagesUrl + "/" + objectName;
+        } else if (publicUrl != null && !publicUrl.isEmpty()) {
+            // Use single CDN URL with path
+            return publicUrl + "/pages/" + objectName;
+        } else {
+            // No CDN configured, return null (will use controller endpoints)
+            return null;
+        }
+    }
+
+    /**
+     * Delete image from storage
      */
     public void deleteImage(String objectName, String bucket) {
         try {
@@ -160,53 +162,13 @@ public class MinioStorageService {
 
             log.info("Successfully deleted image from bucket: {}, object: {}", bucket, objectName);
         } catch (Exception e) {
-            log.error("Error deleting image from MinIO: {}", e.getMessage(), e);
-            throw new RuntimeException("Error deleting image from MinIO", e);
+            log.error("Error deleting image: {}", e.getMessage(), e);
+            throw new RuntimeException("Error deleting image", e);
         }
     }
-
-    /**
-     * Generate a unique object name for storage
-     *
-     * @param contentType MIME type to determine file extension
-     * @return Unique object name
-     */
-    private String generateObjectName(String contentType) {
-        String extension = getExtensionFromContentType(contentType);
-        return UUID.randomUUID().toString() + "." + extension;
-    }
-
-    /**
-     * Get file extension from content type
-     *
-     * @param contentType MIME type
-     * @return File extension
-     */
-    private String getExtensionFromContentType(String contentType) {
-        if (contentType == null) {
-            return "jpg"; // Default extension
-        }
-
-        if (contentType.contains("jpeg") || contentType.contains("jpg")) {
-            return "jpg";
-        } else if (contentType.contains("png")) {
-            return "png";
-        } else if (contentType.contains("gif")) {
-            return "gif";
-        } else if (contentType.contains("webp")) {
-            return "webp";
-        } else {
-            return "jpg"; // Default extension
-        }
-    }
-
-    // Add these methods to MinioStorageService
 
     /**
      * Upload a cover image (overwrite if exists with same object name)
-     * @param imageData Image data
-     * @param contentType MIME type
-     * @param objectName The specific MinIO object name to use
      */
     public void uploadCoverImage(byte[] imageData, String contentType, String objectName) {
         uploadImage(imageData, contentType, coversBucket, objectName);
@@ -214,21 +176,13 @@ public class MinioStorageService {
 
     /**
      * Upload a page image (overwrite if exists with same object name)
-     * @param imageData Image data
-     * @param contentType MIME type
-     * @param objectName The specific MinIO object name to use
      */
     public void uploadPageImage(byte[] imageData, String contentType, String objectName) {
         uploadImage(imageData, contentType, pagesBucket, objectName);
     }
 
     /**
-     * Upload image to MinIO with a specific object name
-     *
-     * @param imageData Image data as byte array
-     * @param contentType MIME type of the image
-     * @param bucket Bucket name to store the image
-     * @param objectName The specific object name to use (overwrite if exists)
+     * Upload image with a specific object name
      */
     private void uploadImage(byte[] imageData, String contentType, String bucket, String objectName) {
         if (imageData == null || imageData.length == 0) {
@@ -250,8 +204,42 @@ public class MinioStorageService {
 
             log.info("Successfully uploaded image to bucket: {}, object: {}", bucket, objectName);
         } catch (Exception e) {
-            log.error("Error uploading image to MinIO: {}", e.getMessage(), e);
-            throw new RuntimeException("Error uploading image to MinIO", e);
+            log.error("Error uploading image: {}", e.getMessage(), e);
+            throw new RuntimeException("Error uploading image", e);
         }
+    }
+
+    /**
+     * Generate a unique object name for storage
+     */
+    private String generateObjectName(String contentType) {
+        String extension = getExtensionFromContentType(contentType);
+        return UUID.randomUUID().toString() + "." + extension;
+    }
+
+    /**
+     * Get file extension from content type
+     */
+    private String getExtensionFromContentType(String contentType) {
+        if (contentType == null) {
+            return "jpg"; // Default extension
+        }
+
+        if (contentType.contains("jpeg") || contentType.contains("jpg")) {
+            return "jpg";
+        } else if (contentType.contains("png")) {
+            return "png";
+        } else if (contentType.contains("gif")) {
+            return "gif";
+        } else if (contentType.contains("webp")) {
+            return "webp";
+        } else {
+            return "jpg"; // Default extension
+        }
+    }
+
+    // Expose MinioClient for advanced operations if needed
+    public MinioClient minioClient() {
+        return minioClient;
     }
 }
