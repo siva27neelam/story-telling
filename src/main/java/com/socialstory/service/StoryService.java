@@ -1,8 +1,7 @@
 package com.socialstory.service;
 
 import com.socialstory.model.*;
-import com.socialstory.repository.StoryArchiveRepository;
-import com.socialstory.repository.StoryRepository;
+import com.socialstory.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +31,7 @@ public class StoryService {
     private final StoryArchiveRepository storyArchiveRepository;
     private final MinioStorageService minioStorageService;
     private final ImageCompressionService imageCompressionService;
+    private final UserStoryInteractionRepository userStoryInteractionRepository;
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
     public Story createStory(Story story, List<MultipartFile> pageImages, MultipartFile coverImage) {
@@ -331,8 +331,61 @@ public class StoryService {
     }
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
+    @Transactional
     public void deleteStory(Long id) {
-        storyRepository.deleteById(id);
+        log.info("Starting deletion of story with id: {}", id);
+
+        try {
+            Story story = storyRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Story not found with id: " + id));
+
+            // Step 1: Delete user story interactions first
+            log.info("Deleting user story interactions for story id: {}", id);
+            List<UserStoryInteraction> interactions = userStoryInteractionRepository.findByStoryId(id);
+            if (!interactions.isEmpty()) {
+                userStoryInteractionRepository.deleteAll(interactions);
+                log.info("Deleted {} user story interactions", interactions.size());
+            }
+
+            // Step 2: Delete images from MinIO if they exist
+            log.info("Cleaning up MinIO images for story id: {}", id);
+
+            // Delete cover image from MinIO
+            if (story.getCoverImagePath() != null) {
+                try {
+                    minioStorageService.deleteImage(story.getCoverImagePath(),
+                            minioStorageService.getCoversBucket());
+                    log.info("Deleted cover image from MinIO: {}", story.getCoverImagePath());
+                } catch (Exception e) {
+                    log.warn("Failed to delete cover image from MinIO: {}", e.getMessage());
+                }
+            }
+
+            // Delete page images from MinIO
+            if (story.getPages() != null) {
+                for (StoryPage page : story.getPages()) {
+                    if (page.getImagePath() != null) {
+                        try {
+                            minioStorageService.deleteImage(page.getImagePath(),
+                                    minioStorageService.getPagesBucket());
+                            log.info("Deleted page image from MinIO: {}", page.getImagePath());
+                        } catch (Exception e) {
+                            log.warn("Failed to delete page image from MinIO: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
+
+            // Step 3: Delete the story (this will cascade to pages and questions due to JPA cascade settings)
+            log.info("Deleting story entity with id: {}", id);
+            storyRepository.deleteById(id);
+
+            log.info("Successfully deleted story with id: {}", id);
+
+        } catch (Exception e) {
+            log.error("Error deleting story with id {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Failed to delete story: " + e.getMessage(), e);
+        }
     }
 
     @Transactional

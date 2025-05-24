@@ -45,11 +45,15 @@ public class Story {
     @Column(name = "cover_image_type")
     private String coverImageType;
 
-    // Update the pages relationship
+    // Update the pages relationship with cascade delete
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("pageOrder")
     @JsonManagedReference
     private List<StoryPage> pages = new ArrayList<>();
+
+    // Add cascade delete for user interactions
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserStoryInteraction> userInteractions = new ArrayList<>();
 
     @Column(name = "is_cover_compressed")
     private Boolean isCoverCompressed = false;

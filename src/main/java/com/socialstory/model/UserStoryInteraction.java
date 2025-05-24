@@ -21,6 +21,7 @@ public class UserStoryInteraction {
     @JoinColumn(name = "user_id")
     private User user;
 
+    // Remove cascade here to prevent issues, but allow deletion when story is deleted
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "story_id")
     private Story story;
