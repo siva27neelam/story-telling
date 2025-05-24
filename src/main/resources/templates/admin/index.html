@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <!-- SEO Meta Tags -->
     <title>Admin Dashboard | SleepyTales</title>
     <meta name="description" content="SleepyTales admin dashboard for managing stories, users, and analytics.">
     <meta name="robots" content="noindex, nofollow">
@@ -15,9 +14,6 @@
     <div th:replace="fragments/common :: performance-head"></div>
 </head>
 <body>
-<!-- Skip Link for Accessibility -->
-<a href="#main-content" class="skip-link">Skip to main content</a>
-
 <!-- Header -->
 <header class="main-header">
     <div class="container-fluid">
@@ -33,7 +29,7 @@
                     <span class="greeting" th:if="${session.currentUser != null}">
                         Hi, <span th:text="${session.currentUser.firstName}">User</span>
                     </span>
-                <button class="hamburger-menu" id="hamburgerMenu" aria-label="Toggle navigation menu">
+                <button class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
                     <i class="fas fa-bars" aria-hidden="true"></i>
                 </button>
             </div>
@@ -44,34 +40,34 @@
 <!-- Main Admin Container -->
 <div class="admin-container">
     <!-- Admin Sidebar Navigation -->
-    <nav class="admin-sidebar" role="navigation" aria-label="Admin navigation">
+    <nav class="admin-sidebar">
         <ul class="admin-nav">
             <li class="admin-nav-item active">
-                <a href="#overview" onclick="activateTab('overview')" aria-label="Overview dashboard">
+                <a href="#overview" onclick="activateTab('overview')">
                     <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
                     <span>Overview</span>
                 </a>
             </li>
             <li class="admin-nav-item">
-                <a href="/admin/approvals" aria-label="Story approvals">
+                <a href="/admin/approvals">
                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                     <span>Story Approvals</span>
                 </a>
             </li>
             <li class="admin-nav-item">
-                <a href="#analytics" onclick="activateTab('analytics')" aria-label="Analytics dashboard">
+                <a href="#analytics" onclick="activateTab('analytics')">
                     <i class="fas fa-chart-line" aria-hidden="true"></i>
                     <span>Analytics</span>
                 </a>
             </li>
             <li class="admin-nav-item">
-                <a href="#settings" onclick="activateTab('settings')" aria-label="System settings">
+                <a href="#settings" onclick="activateTab('settings')">
                     <i class="fas fa-cog" aria-hidden="true"></i>
                     <span>Settings</span>
                 </a>
             </li>
             <li class="admin-nav-item">
-                <a href="/stories" aria-label="Back to stories">
+                <a href="/stories">
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
                     <span>Back to Stories</span>
                 </a>
@@ -80,12 +76,10 @@
     </nav>
 
     <!-- Main Content Area -->
-    <main id="main-content" class="admin-content">
+    <main class="admin-content">
         <!-- Overview Section -->
         <section id="overview" class="admin-section active">
-            <header>
-                <h2>Dashboard Overview</h2>
-            </header>
+            <h2>Dashboard Overview</h2>
 
             <!-- Metrics Cards -->
             <div class="row mb-4">
@@ -153,8 +147,7 @@
                             <h3>Popular Stories</h3>
                         </div>
                         <div class="admin-panel-body">
-                            <canvas id="popularStoriesChart" width="400" height="200"
-                                    aria-label="Chart showing most popular stories by read count"></canvas>
+                            <canvas id="popularStoriesChart" width="400" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -164,8 +157,7 @@
                             <h3>User Activity (7 Days)</h3>
                         </div>
                         <div class="admin-panel-body">
-                            <canvas id="userActivityChart" width="400" height="200"
-                                    aria-label="Chart showing daily user activity over the past week"></canvas>
+                            <canvas id="userActivityChart" width="400" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -180,13 +172,13 @@
                         </div>
                         <div class="admin-panel-body">
                             <div class="table-responsive">
-                                <table class="table admin-table" aria-label="Recent user activities">
+                                <table class="table admin-table">
                                     <thead>
                                     <tr>
-                                        <th scope="col">User</th>
-                                        <th scope="col">Story</th>
-                                        <th scope="col">Activity</th>
-                                        <th scope="col">Time</th>
+                                        <th>User</th>
+                                        <th>Story</th>
+                                        <th>Activity</th>
+                                        <th>Time</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -197,8 +189,8 @@
                                         <td th:text="${activity.userName}">User Name</td>
                                         <td th:text="${activity.storyTitle}">Story Title</td>
                                         <td>
-                                                    <span th:class="${activity.activityType == 'Completed' ? 'badge bg-success' : 'badge bg-primary'}"
-                                                          th:text="${activity.activityType}">Read</span>
+                                                <span th:class="${activity.activityType == 'Completed' ? 'badge bg-success' : 'badge bg-primary'}"
+                                                      th:text="${activity.activityType}">Read</span>
                                         </td>
                                         <td th:text="${#temporals.format(activity.timestamp, 'yyyy-MM-dd HH:mm')}">2023-01-01 12:00</td>
                                     </tr>
@@ -213,9 +205,7 @@
 
         <!-- Analytics Section -->
         <section id="analytics" class="admin-section">
-            <header>
-                <h2>Analytics Dashboard</h2>
-            </header>
+            <h2>Analytics Dashboard</h2>
 
             <div class="row mb-4">
                 <div class="col-md-6">
@@ -224,8 +214,7 @@
                             <h3>Story Completion Rates</h3>
                         </div>
                         <div class="admin-panel-body">
-                            <canvas id="completionRateChart" width="400" height="200"
-                                    aria-label="Chart showing story completion rates"></canvas>
+                            <canvas id="completionRateChart" width="400" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -235,8 +224,7 @@
                             <h3>Session Duration Distribution</h3>
                         </div>
                         <div class="admin-panel-body">
-                            <canvas id="sessionDurationChart" width="400" height="200"
-                                    aria-label="Chart showing distribution of session durations"></canvas>
+                            <canvas id="sessionDurationChart" width="400" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -245,26 +233,22 @@
 
         <!-- Settings Section -->
         <section id="settings" class="admin-section">
-            <header>
-                <h2>System Settings</h2>
-            </header>
+            <h2>System Settings</h2>
 
             <div class="admin-panel">
                 <div class="admin-panel-header">
                     <h3>Application Settings</h3>
                 </div>
                 <div class="admin-panel-body">
-                    <form id="settingsForm" novalidate>
+                    <form id="settingsForm">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="siteTitle" class="form-label">Site Title</label>
-                                <input type="text" class="form-control" id="siteTitle"
-                                       value="SleepyTales" required>
+                                <input type="text" class="form-control" id="siteTitle" value="SleepyTales" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="contactEmail" class="form-label">Contact Email</label>
-                                <input type="email" class="form-control" id="contactEmail"
-                                       value="info@sleepytales.in" required>
+                                <input type="email" class="form-control" id="contactEmail" value="info@sleepytales.in" required>
                             </div>
                         </div>
 
@@ -303,7 +287,6 @@
 
 <!-- Chart Data for JavaScript -->
 <script th:inline="javascript">
-    // Pass Thymeleaf data to JavaScript
     const popularStories = /*[[${metrics.storyData}]]*/ [];
     const userActivity = /*[[${metrics.activityData}]]*/ [];
 </script>

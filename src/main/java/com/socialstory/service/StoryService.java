@@ -374,14 +374,12 @@ public class StoryService {
         storyRepository.save(story);
     }
 
-    // In getStoriesPage method - update to only get PUBLISHED stories
     @Cacheable(value = "storiesPageCache", key = "#page + '-' + #size")
     public Page<StoryListDTO> getStoriesPage(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return storyRepository.findAllPublishedStoriesForList(pageRequest);
     }
 
-    // New method to get pending stories
     public Page<StoryListDTO> getPendingStoriesPage(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("submittedForApprovalAt").descending());
         return storyRepository.findPendingStoriesForList(pageRequest);

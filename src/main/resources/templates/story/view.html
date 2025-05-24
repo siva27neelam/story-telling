@@ -6,23 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <!-- SEO Meta Tags -->
-    <title th:text="${story.title + ' | SleepyTales - Interactive Children\'s Stories'}">Story Title | SleepyTales</title>
-    <meta name="description" th:content="'Read the interactive story: ' + ${story.title} + ' on SleepyTales. Engage with questions and enjoy immersive storytelling.'">
-
-    <!-- Open Graph Tags -->
-    <meta property="og:title" th:content="${story.title + ' | SleepyTales'}">
-    <meta property="og:description" th:content="'Read the interactive story: ' + ${story.title} + ' with engaging questions and beautiful illustrations.'">
-    <meta property="og:image" th:content="@{/stories/cover/{id}(id=${story.id})}">
-    <meta property="og:type" content="article">
+    <title th:text="${story.title + ' | SleepyTales'}">Story Title | SleepyTales</title>
+    <meta name="description" th:content="'Read the interactive story: ' + ${story.title} + ' on SleepyTales.'">
 
     <!-- Performance Head -->
     <div th:replace="fragments/common :: performance-head"></div>
 </head>
 <body>
-<!-- Skip Link for Accessibility -->
-<a href="#main-content" class="skip-link">Skip to main content</a>
-
 <!-- Include Header -->
 <div th:replace="fragments/common :: header"></div>
 
@@ -31,39 +21,35 @@
 <div th:replace="fragments/common :: sidebar-overlay"></div>
 
 <!-- Main Content -->
-<main id="main-content" class="container mt-5">
-    <article class="story-container">
-        <header>
-            <h1 th:text="${story.title}" class="mb-4 story-title">Story Title</h1>
-        </header>
+<main class="container mt-5">
+    <div class="story-container">
+        <h1 th:text="${story.title}" class="mb-4">Story Title</h1>
 
         <!-- Story Pages -->
-        <section class="story-pages view-mode" role="main" aria-live="polite">
+        <div class="story-pages view-mode">
             <div th:each="page, stat : ${story.pages}"
                  th:class="${stat.first ? 'story-page active' : 'story-page'}"
                  th:id="'page-' + ${stat.index}"
-                 th:data-page-id="${page.id}"
-                 th:attr="aria-label='Page ' + ${stat.count} + ' of ' + ${story.pages.size()}">
+                 th:data-page-id="${page.id}">
 
                 <!-- Story Image -->
-                <img th:src="@{/stories/image/{id}(id=${page.id})}"
-                     class="story-image"
-                     th:alt="'Illustration for page ' + ${stat.count}"
-                     loading="lazy"
-                     width="400"
-                     height="300">
+                <div th:if="${page.imageData != null or page.imagePath != null}" class="story-image-container">
+                    <img th:src="@{/stories/image/{id}(id=${page.id})}"
+                         class="story-image"
+                         th:alt="'Illustration for page ' + ${stat.count}"
+                         loading="lazy"
+                         onerror="this.style.display='none'">
+                </div>
 
                 <!-- Story Text -->
-                <div class="story-text fs-4" th:text="${page.text}" role="main">
+                <div class="story-text" th:text="${page.text}">
                     Page text
                 </div>
             </div>
-        </section>
+        </div>
 
         <!-- Progress Container -->
-        <div class="progress-container" role="progressbar"
-             th:attr="aria-valuenow=1, aria-valuemin=1, aria-valuemax=${story.pages.size()}"
-             aria-label="Story progress">
+        <div class="progress-container">
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
@@ -71,52 +57,47 @@
                 <span id="currentPage">1</span>/<span id="totalPages" th:text="${story.pages.size()}">5</span>
             </div>
         </div>
-    </article>
+    </div>
 </main>
 
 <!-- Navigation Controls -->
-<nav class="navigation-buttons" role="navigation" aria-label="Story navigation">
-    <button onclick="previousPage()" class="btn btn-secondary" id="prevBtn"
-            disabled aria-label="Go to previous page">
+<div class="navigation-buttons">
+    <button onclick="previousPage()" class="btn btn-secondary" id="prevBtn" disabled>
         <i class="fas fa-chevron-left" aria-hidden="true"></i>
         <span>Previous</span>
     </button>
 
-    <button onclick="toggleReadAloud()" class="btn btn-primary read-aloud-btn" id="readBtn"
-            aria-label="Read page aloud">
+    <button onclick="toggleReadAloud()" class="btn btn-primary read-aloud-btn" id="readBtn">
         <i class="fas fa-volume-up" aria-hidden="true"></i>
         <span>Read Aloud</span>
     </button>
 
-    <button onclick="showQuestions()" class="btn btn-questions has-questions" id="questionsBtn"
-            aria-label="Answer questions about this page">
+    <button onclick="showQuestions()" class="btn btn-questions has-questions" id="questionsBtn">
         <i class="fas fa-question-circle" aria-hidden="true"></i>
         <span>Questions</span>
     </button>
 
-    <button onclick="nextPage()" class="btn btn-primary" id="nextBtn"
-            aria-label="Go to next page">
+    <button onclick="nextPage()" class="btn btn-primary" id="nextBtn">
         <span>Next</span>
         <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </button>
 
-    <a th:href="@{/stories}" class="btn btn-success" id="exitBtn"
-       style="display: none;" aria-label="Story completed, return to story list">
+    <a th:href="@{/stories}" class="btn btn-success" id="exitBtn" style="display: none;">
         <i class="fas fa-check" aria-hidden="true"></i>
         <span>The End!</span>
     </a>
-</nav>
+</div>
 
-<!-- Question Modal (Simplified) -->
-<div class="question-modal" id="questionModal" role="dialog" aria-labelledby="question-title" aria-hidden="true">
+<!-- Question Modal -->
+<div class="question-modal" id="questionModal">
     <div class="question-container">
-        <div class="question-badge" aria-hidden="true">Q</div>
+        <div class="question-badge">Q</div>
 
-        <div class="progress-bar" role="progressbar" aria-label="Question progress">
+        <div class="progress-bar">
             <div class="progress-fill" id="questionProgress"></div>
         </div>
 
-        <h2 class="question-title" id="question-title">
+        <h2 class="question-title">
             Question <span id="currentQuestionNum">1</span>/<span id="totalQuestions">3</span>
         </h2>
 
@@ -124,20 +105,19 @@
             What was the name of the main character in this story?
         </div>
 
-        <div id="optionsContainer" role="group" aria-labelledby="question-title">
+        <div id="optionsContainer">
             <!-- Options will be populated by JavaScript -->
         </div>
 
-        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="feedback" id="feedback"></div>
 
-        <button type="button" class="btn-close" onclick="hideQuestionModal()"
-                aria-label="Close question dialog"></button>
+        <button type="button" class="btn-close" onclick="hideQuestionModal()"></button>
     </div>
 </div>
 
 <!-- Question Completed Message -->
-<div class="question-completed" id="questionCompleted" role="alert" aria-live="polite">
-    <div class="celebration-icon" aria-hidden="true">🎉</div>
+<div class="question-completed" id="questionCompleted">
+    <div class="celebration-icon">🎉</div>
     <h3>Great job!</h3>
     <p>You've answered all the questions correctly!</p>
 </div>
@@ -147,7 +127,6 @@
 
 <!-- Page-specific data for JavaScript -->
 <script th:inline="javascript">
-    // Pass Thymeleaf data to JavaScript
     const totalPages = [[${story.pages.size()}]];
     const questionsByPage = [[${questionsByPage}]];
 </script>
