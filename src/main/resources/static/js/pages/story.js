@@ -1,6 +1,6 @@
 /**
  * pages/story.js - Story viewing, navigation and questions
- * Optimized for performance and mobile
+ * Final clean version
  */
 
 const Story = {
@@ -23,7 +23,9 @@ const Story = {
         totalPagesSpan: null,
         progressFill: null,
         questionsBtn: null,
-        questionModal: null
+        questionModal: null,
+        readBtn: null,
+        closeQuestionBtn: null
     },
 
     init() {
@@ -47,6 +49,8 @@ const Story = {
         this.elements.progressFill = document.getElementById('progressFill');
         this.elements.questionsBtn = document.getElementById('questionsBtn');
         this.elements.questionModal = document.getElementById('questionModal');
+        this.elements.readBtn = document.getElementById('readBtn');
+        this.elements.closeQuestionBtn = document.getElementById('closeQuestionModal');
 
         this.totalPages = this.elements.pages.length;
 
@@ -65,9 +69,24 @@ const Story = {
             this.elements.nextBtn.addEventListener('click', () => this.nextPage());
         }
 
+        // Read aloud button
+        if (this.elements.readBtn) {
+            this.elements.readBtn.addEventListener('click', () => {
+                if (window.toggleReadAloud) {
+                    const currentText = this.getCurrentPageText();
+                    window.toggleReadAloud(currentText);
+                }
+            });
+        }
+
         // Questions button
         if (this.elements.questionsBtn) {
             this.elements.questionsBtn.addEventListener('click', () => this.showQuestions());
+        }
+
+        // Close question modal button
+        if (this.elements.closeQuestionBtn) {
+            this.elements.closeQuestionBtn.addEventListener('click', () => this.hideQuestionModal());
         }
 
         // Keyboard navigation
@@ -87,7 +106,11 @@ const Story = {
                     }
                     break;
                 case 'q':
+                case 'Q':
                     this.showQuestions();
+                    break;
+                case 'Escape':
+                    this.hideQuestionModal();
                     break;
             }
         });
@@ -103,8 +126,8 @@ const Story = {
     },
 
     setupTouchGestures() {
-        if (window.Touch && this.elements.pages.length > 0) {
-            // Add swipe navigation to story container
+        // Check if Touch utility exists and has the method
+        if (window.Touch && typeof window.Touch.addSwipeListener === 'function' && this.elements.pages.length > 0) {
             const storyContainer = document.querySelector('.story-container');
             if (storyContainer) {
                 window.Touch.addSwipeListener(storyContainer, (direction) => {
@@ -146,7 +169,7 @@ const Story = {
             this.pageQuestions = [];
 
             for (let i = 0; i < this.totalPages; i++) {
-                const page = document.getElementById('page-' + i);
+                const page = this.elements.pages[i];
                 const pageId = page ? page.getAttribute('data-page-id') : null;
                 const questions = pageId ? (questionsByPage[pageId] || []) : [];
 
@@ -170,7 +193,7 @@ const Story = {
         });
 
         // Show current page
-        const currentPage = document.getElementById('page-' + index);
+        const currentPage = this.elements.pages[index];
         if (currentPage) {
             currentPage.classList.add('active');
         }
@@ -421,12 +444,7 @@ const Story = {
     }
 };
 
-// Global functions for backward compatibility
-window.showPage = (index) => Story.showPage(index);
-window.nextPage = () => Story.nextPage();
-window.previousPage = () => Story.previousPage();
-window.showQuestions = () => Story.showQuestions();
-window.checkAnswer = (index) => Story.checkAnswer(index);
+// Remove global functions since we're no longer using inline onclick handlers
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {

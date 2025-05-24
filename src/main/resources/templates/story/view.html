@@ -62,22 +62,23 @@
 
 <!-- Navigation Controls -->
 <div class="navigation-buttons">
-    <button onclick="previousPage()" class="btn btn-secondary" id="prevBtn" disabled>
+    <!-- REMOVED onclick handlers - JavaScript will handle these -->
+    <button class="btn btn-secondary" id="prevBtn" disabled>
         <i class="fas fa-chevron-left" aria-hidden="true"></i>
         <span>Previous</span>
     </button>
 
-    <button onclick="toggleReadAloud()" class="btn btn-primary read-aloud-btn" id="readBtn">
+    <button class="btn btn-primary read-aloud-btn" id="readBtn">
         <i class="fas fa-volume-up" aria-hidden="true"></i>
         <span>Read Aloud</span>
     </button>
 
-    <button onclick="showQuestions()" class="btn btn-questions has-questions" id="questionsBtn">
+    <button class="btn btn-questions has-questions" id="questionsBtn">
         <i class="fas fa-question-circle" aria-hidden="true"></i>
         <span>Questions</span>
     </button>
 
-    <button onclick="nextPage()" class="btn btn-primary" id="nextBtn">
+    <button class="btn btn-primary" id="nextBtn">
         <span>Next</span>
         <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </button>
@@ -111,7 +112,8 @@
 
         <div class="feedback" id="feedback"></div>
 
-        <button type="button" class="btn-close" onclick="hideQuestionModal()"></button>
+        <!-- REMOVED onclick handler -->
+        <button type="button" class="btn-close" id="closeQuestionModal"></button>
     </div>
 </div>
 
