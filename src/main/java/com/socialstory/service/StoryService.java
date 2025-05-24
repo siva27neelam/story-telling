@@ -30,7 +30,6 @@ public class StoryService {
     private final QuestionService questionService;
     private final StoryArchiveRepository storyArchiveRepository;
     private final MinioStorageService minioStorageService;
-    private final ImageCompressionService imageCompressionService;
     private final UserStoryInteractionRepository userStoryInteractionRepository;
 
     @CacheEvict(value = "storiesPageCache", allEntries = true)
@@ -45,47 +44,33 @@ public class StoryService {
         story.setStatus(Story.StoryStatus.DRAFT);
         story.setSubmittedForApprovalAt(LocalDateTime.now());
 
+        // Process cover image - MinIO only
         if (coverImage != null && !coverImage.isEmpty()) {
             try {
-                byte[] compressedImage = imageCompressionService.compressImageWithTinyPNG(coverImage.getBytes());
-                story.setCoverImage(compressedImage);
-                story.setCoverImageType(coverImage.getContentType());
-
-                // If we're directly storing in MinIO
                 String coverPath = minioStorageService.uploadCoverImage(
                         coverImage.getBytes(),
                         coverImage.getContentType());
                 story.setCoverImagePath(coverPath);
                 story.setImageMigrated(true);
-
             } catch (Exception e) {
-                log.error("Error processing cover image: {}", e.getMessage());
+                log.error("Error processing cover image: {}", e.getMessage(), e);
             }
         }
 
-        // Process page images
+        // Process page images - MinIO only
         if (story.getPages() != null && pageImages != null) {
             int pageIndex = 0;
             for (StoryPage page : story.getPages()) {
                 if (pageIndex < pageImages.size() && !pageImages.get(pageIndex).isEmpty()) {
                     try {
                         MultipartFile pageImage = pageImages.get(pageIndex);
-
-                        // Store in database for now (will be migrated later)
-                        byte[] compressedPageImage = imageCompressionService.compressImageWithTinyPNG(pageImage.getBytes());
-
-                        page.setImageData(compressedPageImage);
-                        page.setImageType(pageImage.getContentType());
-
-                        // If we're directly storing in MinIO
                         String imagePath = minioStorageService.uploadPageImage(
                                 pageImage.getBytes(),
                                 pageImage.getContentType());
                         page.setImagePath(imagePath);
                         page.setImageMigrated(true);
-
                     } catch (Exception e) {
-                        log.error("Error processing page image: {}", e.getMessage());
+                        log.error("Error processing page image: {}", e.getMessage(), e);
                     }
                 }
                 pageIndex++;
@@ -119,13 +104,17 @@ public class StoryService {
         // Update cover image if provided
         if (coverImageFile != null && !coverImageFile.isEmpty()) {
             try {
-                // Handle database storage
-                byte[] compressedImage = imageCompressionService.compressImageWithTinyPNG(coverImageFile.getBytes());
+                // Delete old MinIO image if exists
+                if (existingStory.getCoverImagePath() != null) {
+                    try {
+                        minioStorageService.deleteImage(existingStory.getCoverImagePath(),
+                                minioStorageService.getCoversBucket());
+                    } catch (Exception e) {
+                        log.warn("Error deleting old cover image from MinIO: {}", e.getMessage());
+                    }
+                }
 
-                existingStory.setCoverImage(compressedImage);
-                existingStory.setCoverImageType(coverImageFile.getContentType());
-
-                // Handle MinIO storage
+                // Upload new image to MinIO
                 String coverPath = minioStorageService.uploadCoverImage(
                         coverImageFile.getBytes(),
                         coverImageFile.getContentType());
@@ -135,24 +124,8 @@ public class StoryService {
             } catch (Exception e) {
                 log.error("Error processing cover image: {}", e.getMessage(), e);
             }
-        } else if (keepExistingCover != null && keepExistingCover) {
-            // Keep existing image - do nothing
-        } else {
-            // Clear the cover image
-            existingStory.setCoverImage(null);
-            existingStory.setCoverImageType(null);
-
-            // Also clear MinIO path if it exists
-            if (existingStory.getCoverImagePath() != null) {
-                try {
-                    minioStorageService.deleteImage(existingStory.getCoverImagePath(),
-                            minioStorageService.getCoversBucket());
-                } catch (Exception e) {
-                    log.error("Error deleting cover image from MinIO: {}", e.getMessage(), e);
-                }
-                existingStory.setCoverImagePath(null);
-            }
         }
+        // If no new cover image uploaded, keep existing cover (do nothing)
 
         // Create a map of existing pages by ID for quick lookup
         Map<Long, StoryPage> existingPages = existingStory.getPages().stream()
@@ -172,27 +145,18 @@ public class StoryService {
                     existingPage.setPageOrder(updatedPage.getPageOrder());
 
                     // Handle image update
-                    boolean keepExisting = (keepExistingImages != null &&
-                            i < keepExistingImages.size() &&
-                            keepExistingImages.get(i));
-
                     if (pageImages != null && i < pageImages.size() && !pageImages.get(i).isEmpty()) {
-                        // New image uploaded
+                        // New image uploaded - replace existing
                         try {
                             MultipartFile imageFile = pageImages.get(i);
-                            byte[] compressedPageImage = imageCompressionService.compressImageWithTinyPNG(imageFile.getBytes());
 
-                            // Database storage
-                            existingPage.setImageData(compressedPageImage);
-                            existingPage.setImageType(imageFile.getContentType());
-
-                            // MinIO storage - delete old image if exists
+                            // Delete old MinIO image if exists
                             if (existingPage.getImagePath() != null) {
                                 try {
                                     minioStorageService.deleteImage(existingPage.getImagePath(),
                                             minioStorageService.getPagesBucket());
                                 } catch (Exception e) {
-                                    log.error("Error deleting page image from MinIO: {}", e.getMessage(), e);
+                                    log.warn("Error deleting old page image from MinIO: {}", e.getMessage());
                                 }
                             }
 
@@ -206,22 +170,8 @@ public class StoryService {
                         } catch (Exception e) {
                             log.error("Error processing page image: {}", e.getMessage(), e);
                         }
-                    } else if (!keepExisting) {
-                        // Clear the image if not keeping existing
-                        existingPage.setImageData(null);
-                        existingPage.setImageType(null);
-
-                        // Also clear MinIO path if it exists
-                        if (existingPage.getImagePath() != null) {
-                            try {
-                                minioStorageService.deleteImage(existingPage.getImagePath(),
-                                        minioStorageService.getPagesBucket());
-                            } catch (Exception e) {
-                                log.error("Error deleting page image from MinIO: {}", e.getMessage(), e);
-                            }
-                            existingPage.setImagePath(null);
-                        }
                     }
+                    // If no new image uploaded, keep existing image (do nothing)
 
                     updatedPages.add(existingPage);
                 } else {
@@ -232,19 +182,11 @@ public class StoryService {
                     if (pageImages != null && i < pageImages.size() && !pageImages.get(i).isEmpty()) {
                         try {
                             MultipartFile imageFile = pageImages.get(i);
-                            byte[] compressedPageImage = imageCompressionService.compressImageWithTinyPNG(imageFile.getBytes());
-
-                            // Database storage
-                            updatedPage.setImageData(compressedPageImage);
-                            updatedPage.setImageType(imageFile.getContentType());
-
-                            // MinIO storage
                             String imagePath = minioStorageService.uploadPageImage(
                                     imageFile.getBytes(),
                                     imageFile.getContentType());
                             updatedPage.setImagePath(imagePath);
                             updatedPage.setImageMigrated(true);
-
                         } catch (Exception e) {
                             log.error("Error processing page image: {}", e.getMessage(), e);
                         }
@@ -271,7 +213,7 @@ public class StoryService {
                         minioStorageService.deleteImage(pageToDelete.getImagePath(),
                                 minioStorageService.getPagesBucket());
                     } catch (Exception e) {
-                        log.error("Error deleting page image from MinIO: {}", e.getMessage(), e);
+                        log.warn("Error deleting page image from MinIO: {}", e.getMessage());
                     }
                 }
             }
@@ -288,12 +230,6 @@ public class StoryService {
         processQuestions(savedStory);
 
         return savedStory;
-    }
-
-    // Original method for backward compatibility
-    public Page<Story> getFullStoriesPage(int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return storyRepository.findAll(pageRequest);
     }
 
     /**
@@ -347,7 +283,7 @@ public class StoryService {
                 log.info("Deleted {} user story interactions", interactions.size());
             }
 
-            // Step 2: Delete images from MinIO if they exist
+            // Step 2: Delete images from MinIO
             log.info("Cleaning up MinIO images for story id: {}", id);
 
             // Delete cover image from MinIO
@@ -413,7 +349,6 @@ public class StoryService {
         StoryArchive archive = new StoryArchive();
         archive.setOriginalStoryId(story.getId());
         archive.setTitle(story.getTitle());
-        // Copy other relevant fields
         archive.setCreatedAt(story.getCreatedAt());
         archive.setSubmittedAt(story.getSubmittedForApprovalAt());
         archive.setRejectedAt(LocalDateTime.now());
@@ -422,7 +357,7 @@ public class StoryService {
 
         storyArchiveRepository.save(archive);
 
-        // Either delete or mark as archived
+        // Mark as archived
         story.setStatus(Story.StoryStatus.ARCHIVED);
         storyRepository.save(story);
     }

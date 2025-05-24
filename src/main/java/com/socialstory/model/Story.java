@@ -37,13 +37,9 @@ public class Story {
     @Column(columnDefinition = "TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
     private String tags;
 
-    @Lob
-    @Column(name = "cover_image", columnDefinition = "LONGBLOB")
-    @Basic(fetch = FetchType.LAZY)
-    private byte[] coverImage;
-
-    @Column(name = "cover_image_type")
-    private String coverImageType;
+    // MinIO cover image path - this is the only image field we need
+    @Column(name = "cover_image_path")
+    private String coverImagePath;
 
     // Update the pages relationship with cascade delete
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -55,9 +51,6 @@ public class Story {
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserStoryInteraction> userInteractions = new ArrayList<>();
 
-    @Column(name = "is_cover_compressed")
-    private Boolean isCoverCompressed = false;
-
     @Enumerated(EnumType.STRING)
     private StoryStatus status = StoryStatus.DRAFT;
 
@@ -66,10 +59,7 @@ public class Story {
     private String approvedBy;
     private LocalDateTime approvedAt;
 
-    @Column(name = "cover_image_path")
-    private String coverImagePath;
-
-    // Flag for migration status
+    // Flag for migration status - can be removed after full migration
     @Column(name = "image_migrated")
     private boolean imageMigrated = false;
 
@@ -78,5 +68,10 @@ public class Story {
         PENDING,      // Submitted for approval
         PUBLISHED,    // Approved and visible
         ARCHIVED      // Rejected or removed
+    }
+
+    // Helper method to check if story has cover image
+    public boolean hasCoverImage() {
+        return coverImagePath != null && !coverImagePath.trim().isEmpty();
     }
 }

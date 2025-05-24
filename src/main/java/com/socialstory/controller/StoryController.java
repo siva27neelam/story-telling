@@ -1,4 +1,4 @@
-// StoryController.java - Updated to use DTOs for the list page
+// StoryController.java - Complete file with MinIO-only implementation
 package com.socialstory.controller;
 
 import com.socialstory.model.*;
@@ -59,7 +59,6 @@ public class StoryController {
         return "story/list";
     }
 
-    // Rest of the controller remains the same
     @GetMapping("/create")
     public String showCreateForm(Model model) {
         model.addAttribute("story", new Story());
@@ -76,31 +75,6 @@ public class StoryController {
             story.setPages(new ArrayList<>());
         }
 
-        // Process cover image if provided
-        if (coverImageFile != null && !coverImageFile.isEmpty()) {
-            try {
-                story.setCoverImage(coverImageFile.getBytes());
-                story.setCoverImageType(coverImageFile.getContentType());
-            } catch (Exception e) {
-                log.error("Error processing cover image: {}", e.getMessage());
-            }
-        }
-
-        // Process page images if they exist
-        if (images != null) {
-            for (int i = 0; i < story.getPages().size(); i++) {
-                StoryPage page = story.getPages().get(i);
-                if (i < images.size() && !images.get(i).isEmpty()) {
-                    try {
-                        page.setImageData(images.get(i).getBytes());
-                        page.setImageType(images.get(i).getContentType());
-                    } catch (Exception e) {
-                        log.error("Error processing page image: {}", e.getMessage());
-                    }
-                }
-            }
-        }
-
         User currentUser = (User) session.getAttribute("currentUser");
         if (currentUser != null) {
             story.setChangedBy(currentUser.getEmail());
@@ -108,8 +82,7 @@ public class StoryController {
 
         story.setStatus(Story.StoryStatus.DRAFT);
 
-
-        // Save the story (service handles questions)
+        // Save the story (service handles images and questions)
         storyService.createStory(story, images, coverImageFile);
         redirectAttributes.addFlashAttribute("message", "Story created successfully and submitted for approval!");
         return "redirect:/stories";
@@ -131,7 +104,6 @@ public class StoryController {
         redirectAttributes.addFlashAttribute("message", "Story submitted for approval!");
         return "redirect:/stories";
     }
-
 
     @GetMapping("/view/{id}")
     public String viewStory(@PathVariable Long id, Model model, HttpSession session) {
@@ -156,7 +128,6 @@ public class StoryController {
 
         return "story/view";
     }
-
 
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model, HttpSession session) {
@@ -186,55 +157,20 @@ public class StoryController {
                               @ModelAttribute Story story,
                               @RequestParam(value = "imageFile", required = false) List<MultipartFile> images,
                               @RequestParam(value = "coverImageFile", required = false) MultipartFile coverImageFile,
-                              @RequestParam(value = "keepExistingImage", required = false) List<Boolean> keepExistingImages,
-                              @RequestParam(value = "keepExistingCover", required = false) Boolean keepExistingCover,
-                              RedirectAttributes redirectAttributes) {
-        Story existingStory = storyService.getStoryById(id);
+                              RedirectAttributes redirectAttributes,
+                              HttpSession session) {
+
         story.setId(id);
 
-        // Process images
-        if (story.getPages() != null) {
-            for (int i = 0; i < story.getPages().size(); i++) {
-                StoryPage page = story.getPages().get(i);
-
-                // Keep existing image if specified
-                boolean keepExisting = keepExistingImages != null &&
-                        i < keepExistingImages.size() &&
-                        keepExistingImages.get(i);
-
-                if (keepExisting && i < existingStory.getPages().size()) {
-                    StoryPage existingPage = existingStory.getPages().get(i);
-                    page.setImageData(existingPage.getImageData());
-                    page.setImageType(existingPage.getImageType());
-                }
-
-                // Process new image if uploaded
-                if (images != null && i < images.size() && !images.get(i).isEmpty()) {
-                    try {
-                        page.setImageData(images.get(i).getBytes());
-                        page.setImageType(images.get(i).getContentType());
-                    } catch (Exception e) {
-                        log.error("Error processing page image: {}", e.getMessage());
-                    }
-                }
-            }
+        // Set user information
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            story.setChangedBy(currentUser.getEmail());
         }
 
-        // Process cover image
-        if (keepExistingCover != null && keepExistingCover) {
-            story.setCoverImage(existingStory.getCoverImage());
-            story.setCoverImageType(existingStory.getCoverImageType());
-        } else if (coverImageFile != null && !coverImageFile.isEmpty()) {
-            try {
-                story.setCoverImage(coverImageFile.getBytes());
-                story.setCoverImageType(coverImageFile.getContentType());
-            } catch (Exception e) {
-                log.error("Error processing cover image: {}", e.getMessage());
-            }
-        }
-
-        // Update the story (service handles questions)
-        storyService.updateStory(story, images, coverImageFile, keepExistingImages, keepExistingCover);
+        // Update the story (service handles images and questions)
+        // Removed keepExistingImages and keepExistingCover parameters
+        storyService.updateStory(story, images, coverImageFile, null, null);
         redirectAttributes.addFlashAttribute("message", "Story updated successfully!");
         return "redirect:/stories";
     }
@@ -258,8 +194,7 @@ public class StoryController {
         return "redirect:/stories";
     }
 
-
-    // REST endpoints for questions remain the same
+    // REST endpoints for questions
     @GetMapping("/api/pages/{pageId}/questions")
     @ResponseBody
     public ResponseEntity<List<Question>> getQuestionsForPage(@PathVariable Long pageId) {
@@ -298,32 +233,31 @@ public class StoryController {
         return ResponseEntity.ok(response);
     }
 
+    // Image endpoints - MinIO only, no database fallbacks
     @GetMapping("/image/{pageId}")
     @ResponseBody
     public ResponseEntity<byte[]> getImage(@PathVariable Long pageId) {
         StoryPage page = storyPageRepository.findById(pageId)
                 .orElseThrow(() -> new RuntimeException("Page not found"));
 
-        byte[] imageData;
-        String contentType;
-
-        // Check if image is migrated to MinIO
-        if (page.isImageMigrated() && page.getImagePath() != null) {
-            // Get from MinIO
-            imageData = minioStorageService.getPageImage(page.getImagePath());
-            contentType = determineContentType(page.getImagePath());
-        } else if (page.getImageData() != null) {
-            // Get from database
-            imageData = page.getImageData();
-            contentType = page.getImageType();
-        } else {
-            return ResponseEntity.notFound().build();
+        // MinIO only - no fallbacks
+        if (page.getImagePath() != null && !page.getImagePath().trim().isEmpty()) {
+            try {
+                byte[] imageData = minioStorageService.getPageImage(page.getImagePath());
+                if (imageData != null && imageData.length > 0) {
+                    String contentType = determineContentType(page.getImagePath());
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.parseMediaType(contentType))
+                            .header("Cache-Control", "max-age=604800, public") // 7 days cache
+                            .body(imageData);
+                }
+            } catch (Exception e) {
+                log.error("Failed to get image from MinIO for page {}: {}", pageId, e.getMessage());
+            }
         }
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header("Cache-Control", "max-age=604800, public") // 7 days cache
-                .body(imageData);
+        // No image found
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/cover/{id}")
@@ -331,26 +265,24 @@ public class StoryController {
     public ResponseEntity<byte[]> getCoverImage(@PathVariable Long id) {
         Story story = storyService.getStoryById(id);
 
-        byte[] imageData;
-        String contentType;
-
-        // Check if image is migrated to MinIO
-        if (story.isImageMigrated() && story.getCoverImagePath() != null) {
-            // Get from MinIO
-            imageData = minioStorageService.getCoverImage(story.getCoverImagePath());
-            contentType = determineContentType(story.getCoverImagePath());
-        } else if (story.getCoverImage() != null) {
-            // Get from database
-            imageData = story.getCoverImage();
-            contentType = story.getCoverImageType();
-        } else {
-            return ResponseEntity.notFound().build();
+        // MinIO only - no fallbacks
+        if (story.getCoverImagePath() != null && !story.getCoverImagePath().trim().isEmpty()) {
+            try {
+                byte[] imageData = minioStorageService.getCoverImage(story.getCoverImagePath());
+                if (imageData != null && imageData.length > 0) {
+                    String contentType = determineContentType(story.getCoverImagePath());
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.parseMediaType(contentType))
+                            .header("Cache-Control", "max-age=604800, public") // 7 days cache
+                            .body(imageData);
+                }
+            } catch (Exception e) {
+                log.error("Failed to get cover image from MinIO for story {}: {}", id, e.getMessage());
+            }
         }
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header("Cache-Control", "max-age=604800, public") // 7 days cache
-                .body(imageData);
+        // No image found
+        return ResponseEntity.notFound().build();
     }
 
     /**

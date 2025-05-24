@@ -32,8 +32,8 @@
                  th:id="'page-' + ${stat.index}"
                  th:data-page-id="${page.id}">
 
-                <!-- Story Image -->
-                <div th:if="${page.imageData != null or page.imagePath != null}" class="story-image-container">
+                <!-- Story Image - MinIO only -->
+                <div th:if="${page.imagePath != null}" class="story-image-container">
                     <img th:data-src="@{/stories/image/{id}(id=${page.id})}"
                          class="story-image lazy-image"
                          th:alt="'Illustration for page ' + ${stat.count}"

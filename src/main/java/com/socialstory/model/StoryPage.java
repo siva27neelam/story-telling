@@ -22,13 +22,9 @@ public class StoryPage {
     @Column(columnDefinition = "TEXT")
     private String text;
 
-    @Lob
-    @Column(name = "image_data", columnDefinition = "LONGBLOB")
-    @Basic(fetch = FetchType.LAZY)
-    private byte[] imageData;
-
-    @Column(name = "image_type")
-    private String imageType;
+    // MinIO image path - this is the only image field we need
+    @Column(name = "image_path")
+    private String imagePath;
 
     private Integer pageOrder;
 
@@ -42,13 +38,12 @@ public class StoryPage {
     @JsonManagedReference
     private List<Question> questions = new ArrayList<>();
 
-    @Column(name = "is_image_compressed")
-    private Boolean isImageCompressed = false;
-
-    @Column(name = "image_path")
-    private String imagePath;
-
-    // Flag for migration status
+    // Flag for migration status - can be removed after full migration
     @Column(name = "image_migrated")
     private boolean imageMigrated = false;
+
+    // Helper method to check if page has image
+    public boolean hasImage() {
+        return imagePath != null && !imagePath.trim().isEmpty();
+    }
 }
