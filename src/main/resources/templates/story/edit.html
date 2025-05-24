@@ -175,10 +175,12 @@
                 <a th:href="@{/stories}" class="btn btn-light">
                     <i class="fas fa-times"></i> Cancel
                 </a>
-                <button type="button" class="btn btn-primary" onclick="showPinModal('save')">
+                <!-- Direct submit button without PIN for now -->
+                <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Save Changes
                 </button>
-                <button type="button" class="btn btn-danger" onclick="showPinModal('delete')">
+                <!-- Admin-only delete button -->
+                <button type="button" class="btn btn-danger" onclick="showPinModal('delete')" th:if="${isAdmin}">
                     <i class="fas fa-trash"></i> Delete Story
                 </button>
             </div>
@@ -205,7 +207,7 @@
     </div>
 </div>
 
-<!-- PIN Modal -->
+<!-- PIN Modal (only for delete) -->
 <div class="modal fade" id="pinModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -214,7 +216,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-center">Please enter the PIN</p>
+                <p class="text-center">Please enter the PIN to delete this story</p>
                 <div class="pin-container">
                     <input type="password" maxlength="1" class="form-control pin-input">
                     <input type="password" maxlength="1" class="form-control pin-input">

@@ -1,5 +1,5 @@
 /**
- * components/forms.js - Story creation and editing functionality
+ * components/forms.js - Fixed story creation and editing functionality
  * Lightweight form handling for story management
  */
 
@@ -13,6 +13,7 @@ const StoryForms = {
         this.setupPinModal();
         this.setupFormValidation();
         this.initializePageCount();
+        this.setupFormSubmission();
     },
 
     initializePageCount() {
@@ -22,6 +23,27 @@ const StoryForms = {
         } else {
             // For edit page, get existing page count
             this.pageCount = document.querySelectorAll('.story-page').length;
+        }
+    },
+
+    setupFormSubmission() {
+        const form = document.getElementById('storyForm');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                // Show loading state
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    submitBtn.disabled = true;
+
+                    // Re-enable after a delay in case of validation errors
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 5000);
+                }
+            });
         }
     },
 
@@ -50,6 +72,12 @@ const StoryForms = {
                 if (e.target.value.length === 1 && index < pinInputs.length - 1) {
                     pinInputs[index + 1].focus();
                 }
+
+                // Auto-verify if all inputs are filled
+                const allFilled = Array.from(pinInputs).every(inp => inp.value.length === 1);
+                if (allFilled) {
+                    setTimeout(() => this.verifyPin(), 100);
+                }
             });
 
             input.addEventListener('keydown', (e) => {
@@ -61,18 +89,61 @@ const StoryForms = {
                 }
             });
         });
+
+        // Setup modal close handlers
+        const pinModal = document.getElementById('pinModal');
+        if (pinModal) {
+            pinModal.addEventListener('hidden.bs.modal', () => {
+                this.clearPinInputs();
+            });
+        }
     },
 
     setupFormValidation() {
         const forms = document.querySelectorAll('form');
 
         forms.forEach(form => {
+            // Real-time validation
+            const inputs = form.querySelectorAll('input[required], textarea[required]');
+            inputs.forEach(input => {
+                input.addEventListener('blur', () => {
+                    this.validateField(input);
+                });
+
+                input.addEventListener('input', () => {
+                    if (input.classList.contains('is-invalid')) {
+                        this.validateField(input);
+                    }
+                });
+            });
+
             form.addEventListener('submit', (e) => {
                 if (!this.validateForm(form)) {
                     e.preventDefault();
+
+                    // Scroll to first error
+                    const firstError = form.querySelector('.is-invalid');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
                 }
             });
         });
+    },
+
+    validateField(field) {
+        const isValid = field.value.trim() !== '';
+
+        if (isValid) {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        } else {
+            field.classList.remove('is-valid');
+            field.classList.add('is-invalid');
+        }
+
+        return isValid;
     },
 
     validateForm(form) {
@@ -80,15 +151,77 @@ const StoryForms = {
         let isValid = true;
 
         requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add('is-invalid');
+            if (!this.validateField(field)) {
                 isValid = false;
-            } else {
-                field.classList.remove('is-invalid');
             }
         });
 
+        // Validate that each page has text
+        const pages = form.querySelectorAll('.story-page');
+        pages.forEach((page, index) => {
+            const textArea = page.querySelector('textarea[name*=".text"]');
+            if (textArea && !textArea.value.trim()) {
+                textArea.classList.add('is-invalid');
+                isValid = false;
+
+                // Show error message
+                this.showFieldError(textArea, `Page ${index + 1} must have text content`);
+            }
+        });
+
+        if (!isValid) {
+            this.showAlert('Please fix the validation errors before submitting.', 'danger');
+        }
+
         return isValid;
+    },
+
+    showFieldError(field, message) {
+        // Remove existing error message
+        const existingError = field.parentNode.querySelector('.field-error');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Add new error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error text-danger mt-1';
+        errorDiv.textContent = message;
+        field.parentNode.appendChild(errorDiv);
+
+        // Remove error message after 5 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    },
+
+    showAlert(message, type = 'info') {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.story-container .alert');
+        existingAlerts.forEach(alert => alert.remove());
+
+        // Create new alert
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Insert at top of story container
+        const container = document.querySelector('.story-container');
+        if (container) {
+            container.insertBefore(alert, container.firstChild);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
     },
 
     addPage() {
@@ -108,6 +241,16 @@ const StoryForms = {
 
         this.pageCount++;
         this.updatePageNumbers();
+
+        // Scroll to new page
+        const newPage = container.lastElementChild;
+        newPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Focus on the text area
+        const textArea = newPage.querySelector('textarea');
+        if (textArea) {
+            setTimeout(() => textArea.focus(), 500);
+        }
     },
 
     deletePage(button) {
@@ -116,11 +259,17 @@ const StoryForms = {
         if (pageElements.length > 1) {
             const page = button.closest('.story-page');
             if (page) {
-                page.remove();
-                this.updatePageNumbers();
+                // Add fade out animation
+                page.style.transition = 'opacity 0.3s ease';
+                page.style.opacity = '0';
+
+                setTimeout(() => {
+                    page.remove();
+                    this.updatePageNumbers();
+                }, 300);
             }
         } else {
-            alert('Story must have at least one page');
+            this.showAlert('Story must have at least one page', 'warning');
         }
     },
 
@@ -128,9 +277,9 @@ const StoryForms = {
         const pages = document.querySelectorAll('.story-page');
 
         pages.forEach((page, index) => {
-            const heading = page.querySelector('h4');
+            const heading = page.querySelector('h4 span');
             if (heading) {
-                heading.textContent = `Page ${index + 1}`;
+                heading.textContent = index + 1;
             }
 
             // Update input names
@@ -152,7 +301,7 @@ const StoryForms = {
         const questions = pageElement.querySelectorAll('.question-item');
 
         questions.forEach((question, qIndex) => {
-            const qInputs = question.querySelectorAll('input[name*="questions["]');
+            const qInputs = question.querySelectorAll('input[name*="questions["], textarea[name*="questions["]');
             qInputs.forEach(input => {
                 input.name = input.name.replace(
                     /pages\[\d+\]\.questions\[\d+\]/,
@@ -167,6 +316,15 @@ const StoryForms = {
         if (!preview || preview.tagName !== 'IMG') return;
 
         if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                this.showAlert('Image file size must be less than 5MB', 'warning');
+                input.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 preview.src = e.target.result;
@@ -181,7 +339,7 @@ const StoryForms = {
                     }
                 }
             };
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         } else {
             preview.src = '';
             preview.style.display = 'none';
@@ -193,6 +351,15 @@ const StoryForms = {
         if (!preview) return;
 
         if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                this.showAlert('Cover image file size must be less than 5MB', 'warning');
+                input.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 preview.src = e.target.result;
@@ -204,7 +371,7 @@ const StoryForms = {
                     keepExistingInput.remove();
                 }
             };
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         } else {
             preview.src = '';
             preview.style.display = 'none';
@@ -230,12 +397,18 @@ const StoryForms = {
         questionDiv.innerHTML = questionHtml;
         questionsContainer.appendChild(questionDiv.firstElementChild);
 
-        // Add simple fade-in effect
+        // Add fade-in effect
         const newQuestion = questionsContainer.lastElementChild;
         newQuestion.style.opacity = '0';
         setTimeout(() => {
             newQuestion.style.opacity = '1';
             newQuestion.style.transition = 'opacity 0.3s ease';
+
+            // Focus on question text input
+            const questionInput = newQuestion.querySelector('input[type="text"]');
+            if (questionInput) {
+                questionInput.focus();
+            }
         }, 10);
     },
 
@@ -259,19 +432,22 @@ const StoryForms = {
         }, 300);
     },
 
-    // PIN verification for edit/delete actions
+    // PIN verification for delete actions only
     showPinModal(action) {
         this.currentAction = action;
 
-        if (window.Modal) {
-            const modal = window.Modal.show('pinModal');
+        // Show Bootstrap modal
+        const pinModal = document.getElementById('pinModal');
+        if (pinModal && window.bootstrap) {
+            const modal = new bootstrap.Modal(pinModal);
+            modal.show();
             this.clearPinInputs();
 
-            // Focus first input
-            setTimeout(() => {
+            // Focus first input after modal is shown
+            pinModal.addEventListener('shown.bs.modal', () => {
                 const firstInput = document.querySelector('.pin-input');
                 if (firstInput) firstInput.focus();
-            }, 100);
+            }, { once: true });
         }
     },
 
@@ -279,6 +455,7 @@ const StoryForms = {
         const pinInputs = document.querySelectorAll('.pin-input');
         pinInputs.forEach(input => {
             input.value = '';
+            input.classList.remove('is-invalid');
         });
 
         const errorDiv = document.getElementById('pinError');
@@ -292,30 +469,65 @@ const StoryForms = {
         const enteredPin = Array.from(pinInputs).map(input => input.value).join('');
 
         if (enteredPin === this.correctPin) {
-            if (window.Modal) {
-                window.Modal.hide('pinModal');
+            // Hide PIN modal
+            const pinModal = document.getElementById('pinModal');
+            if (pinModal && window.bootstrap) {
+                const modal = bootstrap.Modal.getInstance(pinModal);
+                if (modal) {
+                    modal.hide();
+                }
             }
 
-            if (this.currentAction === 'save') {
-                const form = document.getElementById('storyForm');
-                if (form) form.submit();
-            } else if (this.currentAction === 'delete') {
-                if (window.Modal) {
-                    window.Modal.show('deleteConfirmModal');
+            // Execute the action
+            if (this.currentAction === 'delete') {
+                // Show delete confirmation modal
+                const deleteModal = document.getElementById('deleteConfirmModal');
+                if (deleteModal && window.bootstrap) {
+                    const modal = new bootstrap.Modal(deleteModal);
+                    modal.show();
                 }
             }
         } else {
+            // Show error
             const errorDiv = document.getElementById('pinError');
             if (errorDiv) {
                 errorDiv.style.display = 'block';
             }
 
-            this.clearPinInputs();
+            // Add error styling to inputs
+            pinInputs.forEach(input => {
+                input.classList.add('is-invalid');
+            });
 
-            // Focus first input
+            // Clear inputs and refocus
+            this.clearPinInputs();
             const firstInput = document.querySelector('.pin-input');
-            if (firstInput) firstInput.focus();
+            if (firstInput) {
+                firstInput.focus();
+            }
+
+            // Shake effect
+            const pinContainer = document.querySelector('.pin-container');
+            if (pinContainer) {
+                pinContainer.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    pinContainer.style.animation = '';
+                }, 500);
+            }
         }
+    },
+
+    // Utility functions
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 };
 
@@ -328,6 +540,8 @@ window.addQuestion = (button) => StoryForms.addQuestion(button);
 window.removeQuestion = (button) => StoryForms.removeQuestion(button);
 window.showPinModal = (action) => StoryForms.showPinModal(action);
 window.verifyPin = () => StoryForms.verifyPin();
+
+// PIN input navigation helper
 window.moveToNext = (input, index) => {
     if (input.value.length === 1) {
         const inputs = document.querySelectorAll('.pin-input');
@@ -345,6 +559,37 @@ document.addEventListener('DOMContentLoaded', () => {
         StoryForms.init();
     }
 });
+
+// Add CSS for shake animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+    }
+
+    .field-error {
+        font-size: 0.875rem;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+
+    .is-valid {
+        border-color: #198754 !important;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25) !important;
+    }
+
+    .pin-input.is-invalid {
+        border-color: #dc3545 !important;
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+`;
+document.head.appendChild(style);
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {

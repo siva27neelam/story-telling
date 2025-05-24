@@ -14,24 +14,12 @@
     <div th:replace="fragments/common :: performance-head"></div>
 </head>
 <body>
-<!-- Header -->
-<header class="main-header">
-    <div class="container-fluid">
-        <div class="header-content">
-            <div class="logo-container">
-                <h1 class="site-title">Story Approval Dashboard</h1>
-            </div>
-            <div class="user-menu">
-                    <span class="greeting" th:if="${session.currentUser != null}">
-                        Hi, <span th:text="${session.currentUser.firstName}">User</span>
-                    </span>
-                <button class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</header>
+<!-- Include Header -->
+<div th:replace="fragments/common :: header"></div>
+
+<!-- Include Sidebar -->
+<div th:replace="fragments/common :: sidebar"></div>
+<div th:replace="fragments/common :: sidebar-overlay"></div>
 
 <div class="admin-container">
     <!-- Admin Sidebar -->
@@ -154,9 +142,8 @@
     </div>
 </div>
 
-<!-- Main site sidebar (for mobile) -->
-<div th:replace="fragments/common :: sidebar"></div>
-<div th:replace="fragments/common :: sidebar-overlay"></div>
+<!-- Include Footer -->
+<div th:replace="fragments/common :: footer"></div>
 
 <!-- Essential Scripts -->
 <div th:replace="fragments/common :: essential-scripts"></div>
