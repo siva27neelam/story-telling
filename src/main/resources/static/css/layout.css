@@ -30,12 +30,13 @@
 .user-menu {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 15px; /* Space between greeting and hamburger menu */
 }
 
 .greeting {
     font-weight: 600;
     color: var(--text-color);
+    white-space: nowrap; /* Prevents text from wrapping */
 }
 
 /* ========= Sidebar ========= */
@@ -52,9 +53,7 @@
     z-index: 1000;
     box-shadow: var(--shadow-sm);
     transition: all var(--transition);
-    position: fixed;
-    top: 20px;
-    right: 20px;
+    flex-shrink: 0; /* Prevents button from shrinking */
 }
 
 .hamburger-menu:hover {
@@ -631,6 +630,15 @@
 }
 
 @media (max-width: 768px) {
+  .user-menu {
+        gap: 10px;
+    }
+        .greeting {
+            font-size: 0.9rem;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     .footer-content {
         flex-direction: column;
     }
@@ -644,8 +652,6 @@
     }
 
     .hamburger-menu {
-        top: 10px;
-        right: 10px;
         width: 40px;
         height: 40px;
     }
@@ -689,5 +695,16 @@
 
     .stories-header .btn {
         width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-menu {
+        gap: 8px;
+    }
+
+    .greeting {
+        font-size: 0.8rem;
+        max-width: 100px;
     }
 }

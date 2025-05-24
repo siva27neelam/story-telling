@@ -34,10 +34,10 @@
 
                 <!-- Story Image -->
                 <div th:if="${page.imageData != null or page.imagePath != null}" class="story-image-container">
-                    <img th:src="@{/stories/image/{id}(id=${page.id})}"
-                         class="story-image"
+                    <img th:data-src="@{/stories/image/{id}(id=${page.id})}"
+                         class="story-image lazy-image"
                          th:alt="'Illustration for page ' + ${stat.count}"
-                         loading="lazy"
+                         style="display: none;"
                          onerror="this.style.display='none'">
                 </div>
 

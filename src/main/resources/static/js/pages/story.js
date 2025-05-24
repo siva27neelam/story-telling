@@ -184,6 +184,38 @@ const Story = {
         this.updateQuestionsButton();
     },
 
+loadCurrentPageImage() {
+    const currentPage = document.querySelector('.story-page.active');
+    if (!currentPage) return;
+
+    const img = currentPage.querySelector('.lazy-image[data-src]');
+    if (!img || img.src) return; // Already loaded
+
+    // Create loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.style.cssText = `
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+        font-size: 1.2rem;
+    `;
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading image...';
+    img.parentNode.insertBefore(loadingDiv, img);
+
+    // Load the image
+    const tempImg = new Image();
+    tempImg.onload = () => {
+        img.src = tempImg.src;
+        img.style.display = 'block';
+        loadingDiv.remove();
+    };
+
+    tempImg.onerror = () => {
+        loadingDiv.innerHTML = '<i class="fas fa-image"></i> Image unavailable';
+    };
+
+    tempImg.src = img.dataset.src;
+},
     showPage(index) {
         if (index < 0 || index >= this.totalPages) return;
 
@@ -199,6 +231,7 @@ const Story = {
         }
 
         this.currentPageIndex = index;
+    this.loadCurrentPageImage();
 
         // Update navigation
         this.updateNavigation();
@@ -458,3 +491,4 @@ document.addEventListener('DOMContentLoaded', () => {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { Story };
 }
+
