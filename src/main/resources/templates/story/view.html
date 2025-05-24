@@ -124,13 +124,47 @@
     <p>You've answered all the questions correctly!</p>
 </div>
 
+<!-- Add this debug section temporarily to your view.html right after the main content -->
+<div style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-family: monospace; z-index: 9999; max-width: 300px;">
+    <h4>🐛 Debug Info</h4>
+    <div>
+        <strong>Questions by Page:</strong>
+        <div th:each="entry : ${questionsByPage}">
+            Page <span th:text="${entry.key}">ID</span>:
+            <span th:text="${entry.value.size()}">0</span> questions
+            <ul th:if="${!entry.value.empty}">
+                <li th:each="q : ${entry.value}" th:text="${q.text}">Question text</li>
+            </ul>
+        </div>
+    </div>
+
+    <div>
+        <strong>Current Page IDs:</strong>
+        <div th:each="page, stat : ${story.pages}">
+            Page <span th:text="${stat.count}">1</span>: ID = <span th:text="${page.id}">123</span>
+        </div>
+    </div>
+
+    <button onclick="console.log('questionsByPage:', questionsByPage)" style="margin-top: 10px; padding: 5px;">
+        Log Questions to Console
+    </button>
+
+    <button onclick="Story.showQuestions()" style="margin-top: 5px; padding: 5px;">
+        Force Show Questions
+    </button>
+</div>
+
 <!-- Include Footer -->
 <div th:replace="fragments/common :: footer"></div>
 
 <!-- Page-specific data for JavaScript -->
 <script th:inline="javascript">
     const totalPages = [[${story.pages.size()}]];
-    const questionsByPage = [[${questionsByPage}]];
+    const questionsByPage = /*[[${questionsByPage}]]*/ {};
+
+    // Debug: Log the questions data
+    console.log('Questions by page:', questionsByPage);
+    console.log('Total pages:', totalPages);
 </script>
 
 <!-- Interaction tracking data if user is logged in -->

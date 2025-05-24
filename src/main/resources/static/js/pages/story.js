@@ -1,6 +1,6 @@
 /**
- * pages/story.js - Story viewing, navigation and questions
- * Final clean version
+ * pages/story.js - Story viewing, navigation and questions (DEBUG VERSION)
+ * With extensive console logging for debugging
  */
 
 const Story = {
@@ -29,6 +29,7 @@ const Story = {
     },
 
     init() {
+        console.log('🚀 Story.init() called');
         this.cacheElements();
         this.loadQuestions();
         this.setupEventListeners();
@@ -40,6 +41,7 @@ const Story = {
     },
 
     cacheElements() {
+        console.log('📦 Caching DOM elements');
         this.elements.pages = document.querySelectorAll('.story-page');
         this.elements.prevBtn = document.getElementById('prevBtn');
         this.elements.nextBtn = document.getElementById('nextBtn');
@@ -53,13 +55,22 @@ const Story = {
         this.elements.closeQuestionBtn = document.getElementById('closeQuestionModal');
 
         this.totalPages = this.elements.pages.length;
+        console.log(`📖 Total pages found: ${this.totalPages}`);
 
         if (this.elements.totalPagesSpan) {
             this.elements.totalPagesSpan.textContent = this.totalPages;
         }
+
+        // Debug: Check if key elements exist
+        console.log('🔍 DOM Elements check:');
+        console.log('  - questionsBtn:', !!this.elements.questionsBtn);
+        console.log('  - questionModal:', !!this.elements.questionModal);
+        console.log('  - pages:', this.elements.pages.length);
     },
 
     setupEventListeners() {
+        console.log('🎧 Setting up event listeners');
+
         // Navigation buttons
         if (this.elements.prevBtn) {
             this.elements.prevBtn.addEventListener('click', () => this.previousPage());
@@ -81,7 +92,13 @@ const Story = {
 
         // Questions button
         if (this.elements.questionsBtn) {
-            this.elements.questionsBtn.addEventListener('click', () => this.showQuestions());
+            console.log('✅ Questions button found, adding click listener');
+            this.elements.questionsBtn.addEventListener('click', () => {
+                console.log('🎯 Questions button clicked!');
+                this.showQuestions();
+            });
+        } else {
+            console.error('❌ Questions button not found!');
         }
 
         // Close question modal button
@@ -107,6 +124,7 @@ const Story = {
                     break;
                 case 'q':
                 case 'Q':
+                    console.log('🎯 Q key pressed - showing questions');
                     this.showQuestions();
                     break;
                 case 'Escape':
@@ -144,6 +162,7 @@ const Story = {
     setupMetricsTracking() {
         const interactionData = document.getElementById('interactionData');
         this.interactionId = interactionData ? interactionData.dataset.interactionId : null;
+        console.log('📊 Interaction ID:', this.interactionId);
 
         if (this.interactionId) {
             // Update time spent every 30 seconds
@@ -164,6 +183,9 @@ const Story = {
     },
 
     loadQuestions() {
+        console.log('❓ Loading questions...');
+        console.log('📚 questionsByPage global variable:', typeof questionsByPage !== 'undefined' ? questionsByPage : 'UNDEFINED');
+
         // Load questions from global variable set by Thymeleaf
         if (typeof questionsByPage !== 'undefined') {
             this.pageQuestions = [];
@@ -171,52 +193,62 @@ const Story = {
             for (let i = 0; i < this.totalPages; i++) {
                 const page = this.elements.pages[i];
                 const pageId = page ? page.getAttribute('data-page-id') : null;
+                console.log(`📄 Page ${i}: pageId = ${pageId}`);
+
                 const questions = pageId ? (questionsByPage[pageId] || []) : [];
+                console.log(`❓ Page ${i} questions:`, questions);
 
                 this.pageQuestions[i] = questions.map(q => ({
                     question: q.text,
                     options: [q.option1, q.option2],
                     correctAnswer: q.correctOptionIndex
                 }));
+
+                console.log(`✅ Page ${i} processed questions:`, this.pageQuestions[i]);
             }
+        } else {
+            console.error('❌ questionsByPage is undefined! Check if Thymeleaf is passing the data correctly.');
         }
 
+        console.log('📋 Final pageQuestions array:', this.pageQuestions);
         this.updateQuestionsButton();
     },
 
-loadCurrentPageImage() {
-    const currentPage = document.querySelector('.story-page.active');
-    if (!currentPage) return;
+    loadCurrentPageImage() {
+        const currentPage = document.querySelector('.story-page.active');
+        if (!currentPage) return;
 
-    const img = currentPage.querySelector('.lazy-image[data-src]');
-    if (!img || img.src) return; // Already loaded
+        const img = currentPage.querySelector('.lazy-image[data-src]');
+        if (!img || img.src) return; // Already loaded
 
-    // Create loading indicator
-    const loadingDiv = document.createElement('div');
-    loadingDiv.style.cssText = `
-        text-align: center;
-        padding: 2rem;
-        color: #999;
-        font-size: 1.2rem;
-    `;
-    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading image...';
-    img.parentNode.insertBefore(loadingDiv, img);
+        // Create loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.style.cssText = `
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-size: 1.2rem;
+        `;
+        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading image...';
+        img.parentNode.insertBefore(loadingDiv, img);
 
-    // Load the image
-    const tempImg = new Image();
-    tempImg.onload = () => {
-        img.src = tempImg.src;
-        img.style.display = 'block';
-        loadingDiv.remove();
-    };
+        // Load the image
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            img.src = tempImg.src;
+            img.style.display = 'block';
+            loadingDiv.remove();
+        };
 
-    tempImg.onerror = () => {
-        loadingDiv.innerHTML = '<i class="fas fa-image"></i> Image unavailable';
-    };
+        tempImg.onerror = () => {
+            loadingDiv.innerHTML = '<i class="fas fa-image"></i> Image unavailable';
+        };
 
-    tempImg.src = img.dataset.src;
-},
+        tempImg.src = img.dataset.src;
+    },
+
     showPage(index) {
+        console.log(`📖 Showing page ${index}`);
         if (index < 0 || index >= this.totalPages) return;
 
         // Hide all pages
@@ -231,7 +263,7 @@ loadCurrentPageImage() {
         }
 
         this.currentPageIndex = index;
-    this.loadCurrentPageImage();
+        this.loadCurrentPageImage();
 
         // Update navigation
         this.updateNavigation();
@@ -272,12 +304,27 @@ loadCurrentPageImage() {
     },
 
     updateQuestionsButton() {
-        if (!this.elements.questionsBtn) return;
+        console.log(`🔄 Updating questions button for page ${this.currentPageIndex}`);
+        if (!this.elements.questionsBtn) {
+            console.error('❌ Questions button not found in updateQuestionsButton!');
+            return;
+        }
 
-        if (this.questionsAnswered.has(this.currentPageIndex)) {
+        const hasQuestions = this.pageQuestions[this.currentPageIndex] &&
+                           this.pageQuestions[this.currentPageIndex].length > 0;
+        const alreadyAnswered = this.questionsAnswered.has(this.currentPageIndex);
+
+        console.log(`❓ Page ${this.currentPageIndex}: hasQuestions=${hasQuestions}, alreadyAnswered=${alreadyAnswered}`);
+
+        if (alreadyAnswered) {
             this.elements.questionsBtn.classList.remove('has-questions');
-        } else {
+            console.log('✅ Questions already answered - removing has-questions class');
+        } else if (hasQuestions) {
             this.elements.questionsBtn.classList.add('has-questions');
+            console.log('🎯 Questions available - adding has-questions class');
+        } else {
+            this.elements.questionsBtn.classList.remove('has-questions');
+            console.log('📝 No questions available - removing has-questions class');
         }
     },
 
@@ -300,26 +347,38 @@ loadCurrentPageImage() {
 
     // Questions functionality
     showQuestions() {
+        console.log(`🎯 showQuestions() called for page ${this.currentPageIndex}`);
+
         if (this.questionsAnswered.has(this.currentPageIndex)) {
+            console.log('✅ Questions already answered for this page');
             return; // Already answered
         }
 
         const questions = this.pageQuestions[this.currentPageIndex];
+        console.log('❓ Questions for current page:', questions);
+
         if (!questions || questions.length === 0) {
+            console.log('📝 No questions found for this page, marking as answered');
             this.questionsAnswered.add(this.currentPageIndex);
             this.updateQuestionsButton();
             return;
         }
 
+        console.log(`🎬 Showing ${questions.length} questions for page ${this.currentPageIndex}`);
         this.currentQuestionIndex = 0;
         this.showQuestionModal();
     },
 
     showQuestionModal() {
-        if (!this.elements.questionModal) return;
+        console.log('🎭 showQuestionModal() called');
+        if (!this.elements.questionModal) {
+            console.error('❌ Question modal not found!');
+            return;
+        }
 
         const questions = this.pageQuestions[this.currentPageIndex];
         const currentQuestion = questions[this.currentQuestionIndex];
+        console.log('❓ Current question:', currentQuestion);
 
         // Update modal content
         this.updateQuestionContent(currentQuestion, questions.length);
@@ -329,9 +388,13 @@ loadCurrentPageImage() {
         setTimeout(() => {
             this.elements.questionModal.style.opacity = '1';
         }, 10);
+
+        console.log('✅ Question modal displayed');
     },
 
     updateQuestionContent(question, totalQuestions) {
+        console.log('🔄 Updating question content:', question);
+
         const questionNum = document.getElementById('currentQuestionNum');
         const totalQuestionsSpan = document.getElementById('totalQuestions');
         const questionText = document.getElementById('questionText');
@@ -360,12 +423,16 @@ loadCurrentPageImage() {
         // Clear feedback
         const feedback = document.getElementById('feedback');
         if (feedback) feedback.textContent = '';
+
+        console.log('✅ Question content updated');
     },
 
     checkAnswer(selectedIndex) {
+        console.log(`🎯 Answer selected: ${selectedIndex}`);
         const questions = this.pageQuestions[this.currentPageIndex];
         const currentQuestion = questions[this.currentQuestionIndex];
         const isCorrect = selectedIndex === currentQuestion.correctAnswer;
+        console.log(`✅ Answer is ${isCorrect ? 'correct' : 'incorrect'}`);
 
         const options = document.querySelectorAll('.option-btn');
         options.forEach(opt => opt.disabled = true);
@@ -406,6 +473,7 @@ loadCurrentPageImage() {
     },
 
     completeQuestions() {
+        console.log('🎉 All questions completed for page', this.currentPageIndex);
         this.questionsAnswered.add(this.currentPageIndex);
         this.hideQuestionModal();
         this.updateQuestionsButton();
@@ -432,6 +500,7 @@ loadCurrentPageImage() {
     },
 
     hideQuestionModal() {
+        console.log('🎭 Hiding question modal');
         if (this.elements.questionModal) {
             this.elements.questionModal.style.opacity = '0';
             setTimeout(() => {
@@ -477,13 +546,15 @@ loadCurrentPageImage() {
     }
 };
 
-// Remove global functions since we're no longer using inline onclick handlers
-
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🌟 DOM Content Loaded');
     // Only initialize on story view pages
     if (document.querySelector('.story-pages.view-mode')) {
+        console.log('📚 Story view page detected, initializing Story module');
         Story.init();
+    } else {
+        console.log('❌ Not a story view page');
     }
 });
 
@@ -491,4 +562,3 @@ document.addEventListener('DOMContentLoaded', () => {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { Story };
 }
-

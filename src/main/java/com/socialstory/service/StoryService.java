@@ -14,10 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -131,6 +128,9 @@ public class StoryService {
         Map<Long, StoryPage> existingPages = existingStory.getPages().stream()
                 .collect(Collectors.toMap(StoryPage::getId, page -> page));
 
+        // Create a map to store new questions for each page (to pass to processQuestions later)
+        Map<Long, List<Question>> pageQuestionsMap = new HashMap<>();
+
         // Update pages
         if (updatedStory.getPages() != null) {
             List<StoryPage> updatedPages = new ArrayList<>();
@@ -143,6 +143,15 @@ public class StoryService {
                     StoryPage existingPage = existingPages.get(updatedPage.getId());
                     existingPage.setText(updatedPage.getText());
                     existingPage.setPageOrder(updatedPage.getPageOrder());
+
+                    // Store questions separately - don't touch the existing collection yet
+                    if (updatedPage.getQuestions() != null) {
+                        log.info("🔄 DEBUG: Storing {} questions for later processing", updatedPage.getQuestions().size());
+                        pageQuestionsMap.put(existingPage.getId(), new ArrayList<>(updatedPage.getQuestions()));
+                    } else {
+                        log.info("🔄 DEBUG: No questions for this page");
+                        pageQuestionsMap.put(existingPage.getId(), new ArrayList<>());
+                    }
 
                     // Handle image update
                     if (pageImages != null && i < pageImages.size() && !pageImages.get(i).isEmpty()) {
@@ -177,6 +186,12 @@ public class StoryService {
                 } else {
                     // This is a new page
                     updatedPage.setStory(existingStory);
+
+                    // For new pages, store questions for processing
+                    if (updatedPage.getQuestions() != null) {
+                        log.info("🆕 DEBUG: Storing {} questions for new page", updatedPage.getQuestions().size());
+                        // We'll set the page ID after the page is saved
+                    }
 
                     // Handle new page image if provided
                     if (pageImages != null && i < pageImages.size() && !pageImages.get(i).isEmpty()) {
@@ -223,38 +238,103 @@ public class StoryService {
             existingStory.getPages().addAll(updatedPages);
         }
 
-        // Save the updated story
+        // Save the updated story first
         Story savedStory = storyRepository.save(existingStory);
 
-        // Process questions
-        processQuestions(savedStory);
+        // Now handle questions separately to avoid Hibernate collection issues
+        log.info("🔄 DEBUG: Processing questions after story save");
+        for (StoryPage page : savedStory.getPages()) {
+            if (pageQuestionsMap.containsKey(page.getId())) {
+                List<Question> questionsForPage = pageQuestionsMap.get(page.getId());
+                log.info("🔄 DEBUG: Processing {} questions for page ID: {}", questionsForPage.size(), page.getId());
 
-        return savedStory;
-    }
+                // Delete existing questions first
+                questionService.deleteQuestionsByPageId(page.getId());
 
-    /**
-     * Process questions for each page of the story
-     */
-    private void processQuestions(Story story) {
-        if (story.getPages() != null) {
-            for (StoryPage page : story.getPages()) {
-                // Process questions for this page
-                if (page.getQuestions() != null && !page.getQuestions().isEmpty()) {
-                    List<Question> questions = new ArrayList<>(page.getQuestions());
+                // Save new questions
+                for (Question question : questionsForPage) {
+                    if (question != null && question.getText() != null && !question.getText().isEmpty()) {
+                        // Create a fresh question object
+                        Question newQuestion = new Question();
+                        newQuestion.setText(question.getText());
+                        newQuestion.setOption1(question.getOption1());
+                        newQuestion.setOption2(question.getOption2());
+                        newQuestion.setCorrectOptionIndex(question.getCorrectOptionIndex());
+                        newQuestion.setPage(page);
 
-                    // Clear existing questions to avoid duplicates
-                    questionService.deleteQuestionsByPageId(page.getId());
-
-                    // Add each question
-                    for (Question question : questions) {
-                        if (question != null && question.getText() != null && !question.getText().isEmpty()) {
-                            question.setPage(page);
-                            questionService.saveQuestion(question);
-                        }
+                        Question savedQuestion = questionService.saveQuestion(newQuestion);
+                        log.info("✅ DEBUG: Question saved with ID: {} for page: {}", savedQuestion.getId(), page.getId());
                     }
                 }
             }
         }
+
+        return savedStory;
+    }
+
+    // Original method for backward compatibility
+    public Page<Story> getFullStoriesPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return storyRepository.findAll(pageRequest);
+    }
+
+    /**
+     * Process questions for each page of the story (used for story creation)
+     */
+    private void processQuestions(Story story) {
+        log.info("🔍 DEBUG: Processing questions for story ID: {}", story.getId());
+
+        if (story.getPages() != null) {
+            log.info("📄 DEBUG: Story has {} pages", story.getPages().size());
+
+            for (int pageIndex = 0; pageIndex < story.getPages().size(); pageIndex++) {
+                StoryPage page = story.getPages().get(pageIndex);
+                log.info("📝 DEBUG: Processing page {} (ID: {})", pageIndex, page.getId());
+
+                // First, delete all existing questions for this page to avoid conflicts
+                if (page.getId() != null) {
+                    log.info("🗑️ DEBUG: Deleting existing questions for page ID: {}", page.getId());
+                    questionService.deleteQuestionsByPageId(page.getId());
+                }
+
+                // Process questions for this page
+                if (page.getQuestions() != null && !page.getQuestions().isEmpty()) {
+                    List<Question> questions = new ArrayList<>(page.getQuestions());
+                    log.info("❓ DEBUG: Page {} has {} questions to save", pageIndex, questions.size());
+
+                    // Add each question as a new entity (since we deleted all existing ones)
+                    for (int i = 0; i < questions.size(); i++) {
+                        Question question = questions.get(i);
+                        if (question != null && question.getText() != null && !question.getText().isEmpty()) {
+                            // Create a fresh question object to avoid Hibernate issues
+                            Question newQuestion = new Question();
+                            newQuestion.setText(question.getText());
+                            newQuestion.setOption1(question.getOption1());
+                            newQuestion.setOption2(question.getOption2());
+                            newQuestion.setCorrectOptionIndex(question.getCorrectOptionIndex());
+                            newQuestion.setPage(page);
+
+                            log.info("💾 DEBUG: Saving question {}: '{}'", i, newQuestion.getText());
+                            Question savedQuestion = questionService.saveQuestion(newQuestion);
+                            log.info("✅ DEBUG: Question saved with ID: {}", savedQuestion.getId());
+                        } else {
+                            log.warn("⚠️ DEBUG: Skipping empty question at index {}", i);
+                        }
+                    }
+                } else {
+                    log.info("📝 DEBUG: Page {} has no questions", pageIndex);
+                    if (page.getQuestions() == null) {
+                        log.info("📝 DEBUG: page.getQuestions() is null");
+                    } else {
+                        log.info("📝 DEBUG: page.getQuestions() is empty (size: {})", page.getQuestions().size());
+                    }
+                }
+            }
+        } else {
+            log.warn("⚠️ DEBUG: Story has no pages!");
+        }
+
+        log.info("✅ DEBUG: Finished processing questions for story ID: {}", story.getId());
     }
 
     public Story getStoryById(Long id) {

@@ -344,5 +344,117 @@
 
 <!-- Form Scripts -->
 <div th:replace="fragments/common :: form-scripts"></div>
+<!-- Add this debug section to your edit.html right before the </body> tag -->
+
+<!-- DEBUG: Show current form structure -->
+<div style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.9); color: white; padding: 15px; border-radius: 5px; font-family: monospace; z-index: 9999; max-width: 400px; max-height: 80vh; overflow-y: auto;">
+    <h4>🐛 Form Debug Info</h4>
+
+    <div>
+        <strong>Existing Questions in Template:</strong>
+        <div th:each="page, stat : ${story.pages}">
+            <div>Page <span th:text="${stat.count}">1</span> (ID: <span th:text="${page.id}">123</span>):</div>
+            <div th:if="${questionsByPage != null and questionsByPage.get(page.id) != null}">
+                Questions: <span th:text="${questionsByPage.get(page.id).size()}">0</span>
+                <ul th:if="${!questionsByPage.get(page.id).empty}">
+                    <li th:each="q : ${questionsByPage.get(page.id)}" th:text="${q.text}">Question text</li>
+                </ul>
+            </div>
+            <div th:unless="${questionsByPage != null and questionsByPage.get(page.id) != null}">
+                No questions data found
+            </div>
+        </div>
+    </div>
+
+    <button onclick="debugFormFields()" style="margin-top: 10px; padding: 5px; background: #333; color: white; border: 1px solid #555;">
+        Log Form Fields
+    </button>
+
+    <button onclick="logFormData()" style="margin-top: 5px; padding: 5px; background: #333; color: white; border: 1px solid #555;">
+        Log Form Data
+    </button>
+</div>
+
+<script>
+    function debugFormFields() {
+        console.log('🔍 DEBUG: Checking form fields...');
+
+        const form = document.getElementById('storyForm');
+        if (!form) {
+            console.error('❌ Form not found!');
+            return;
+        }
+
+        console.log('📝 All form elements:');
+        const elements = form.elements;
+        for (let i = 0; i < elements.length; i++) {
+            const el = elements[i];
+            if (el.name) {
+                console.log(`  ${el.name}: ${el.value} (type: ${el.type})`);
+            }
+        }
+
+        console.log('❓ Question-related fields:');
+        const questionInputs = form.querySelectorAll('input[name*="questions"], textarea[name*="questions"]');
+        questionInputs.forEach(input => {
+            console.log(`  ${input.name}: ${input.value} (type: ${input.type})`);
+        });
+
+        console.log('📦 Question containers:');
+        const questionContainers = form.querySelectorAll('.questions-container');
+        questionContainers.forEach((container, index) => {
+            const questions = container.querySelectorAll('.question-item');
+            console.log(`  Page ${index}: ${questions.length} question items`);
+
+            questions.forEach((questionItem, qIndex) => {
+                const inputs = questionItem.querySelectorAll('input, textarea');
+                console.log(`    Question ${qIndex}:`);
+                inputs.forEach(input => {
+                    if (input.name) {
+                        console.log(`      ${input.name}: ${input.value}`);
+                    }
+                });
+            });
+        });
+    }
+
+    function logFormData() {
+        console.log('📊 DEBUG: Form data preview...');
+
+        const form = document.getElementById('storyForm');
+        if (!form) {
+            console.error('❌ Form not found!');
+            return;
+        }
+
+        const formData = new FormData(form);
+        console.log('📝 FormData entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+        }
+
+        // Check if there are any question-related entries
+        const questionEntries = [];
+        for (let [key, value] of formData.entries()) {
+            if (key.includes('questions')) {
+                questionEntries.push({ key, value });
+            }
+        }
+
+        console.log('❓ Question entries found:', questionEntries.length);
+        questionEntries.forEach(entry => {
+            console.log(`  ${entry.key}: ${entry.value}`);
+        });
+    }
+
+    // Auto-run on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Debug script loaded');
+        setTimeout(() => {
+            console.log('📋 Auto-checking form fields...');
+            debugFormFields();
+        }, 1000);
+    });
+</script>
 </body>
 </html>
