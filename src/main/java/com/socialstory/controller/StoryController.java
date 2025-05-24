@@ -1,4 +1,3 @@
-// StoryController.java - Complete file with MinIO-only implementation
 package com.socialstory.controller;
 
 import com.socialstory.model.*;
@@ -72,26 +71,6 @@ public class StoryController {
                               @RequestParam(value = "coverImageFile", required = false) MultipartFile coverImageFile,
                               RedirectAttributes redirectAttributes, HttpSession session) {
 
-        // DEBUG: Log incoming story data
-        log.info("🚀 DEBUG: Creating story - Title: {}", story.getTitle());
-        log.info("📄 DEBUG: Story has {} pages", story.getPages() != null ? story.getPages().size() : 0);
-
-        if (story.getPages() != null) {
-            for (int i = 0; i < story.getPages().size(); i++) {
-                StoryPage page = story.getPages().get(i);
-                log.info("📝 DEBUG: Page {}: text length = {}", i, page.getText() != null ? page.getText().length() : 0);
-                log.info("❓ DEBUG: Page {} questions: {}", i, page.getQuestions() != null ? page.getQuestions().size() : "NULL");
-
-                if (page.getQuestions() != null) {
-                    for (int j = 0; j < page.getQuestions().size(); j++) {
-                        Question q = page.getQuestions().get(j);
-                        log.info("❓ DEBUG: Question {}: text='{}', opt1='{}', opt2='{}', correct={}",
-                                j, q.getText(), q.getOption1(), q.getOption2(), q.getCorrectOptionIndex());
-                    }
-                }
-            }
-        }
-
         // Initialize pages list if null
         if (story.getPages() == null) {
             story.setPages(new ArrayList<>());
@@ -137,13 +116,6 @@ public class StoryController {
         for (StoryPage page : story.getPages()) {
             List<Question> questions = questionService.getQuestionsByPageId(page.getId());
             questionsByPage.put(page.getId(), questions);
-
-            // Debug logging
-            log.info("Page {}: {} questions found", page.getId(), questions.size());
-            for (Question q : questions) {
-                log.info("Question: {} - Options: {} / {} - Correct: {}",
-                        q.getText(), q.getOption1(), q.getOption2(), q.getCorrectOptionIndex());
-            }
         }
         model.addAttribute("questionsByPage", questionsByPage);
 
@@ -189,35 +161,6 @@ public class StoryController {
                               RedirectAttributes redirectAttributes,
                               HttpSession session,
                               HttpServletRequest request) {
-
-        // DEBUG: Log all request parameters to see what's being sent
-        log.info("🚀 DEBUG: Updating story ID: {}", id);
-        log.info("📝 DEBUG: All request parameters:");
-        request.getParameterMap().forEach((key, values) -> {
-            log.info("  {}: {}", key, String.join(", ", values));
-        });
-
-        // DEBUG: Log story object
-        log.info("📖 DEBUG: Story title: {}", story.getTitle());
-        log.info("📄 DEBUG: Story pages count: {}", story.getPages() != null ? story.getPages().size() : "NULL");
-
-        if (story.getPages() != null) {
-            for (int i = 0; i < story.getPages().size(); i++) {
-                StoryPage page = story.getPages().get(i);
-                log.info("📝 DEBUG: Page {}: ID={}, text length={}", i, page.getId(),
-                        page.getText() != null ? page.getText().length() : 0);
-                log.info("❓ DEBUG: Page {} questions: {}", i,
-                        page.getQuestions() != null ? page.getQuestions().size() : "NULL");
-
-                if (page.getQuestions() != null && !page.getQuestions().isEmpty()) {
-                    for (int j = 0; j < page.getQuestions().size(); j++) {
-                        Question q = page.getQuestions().get(j);
-                        log.info("❓ DEBUG: Question {}: text='{}', opt1='{}', opt2='{}', correct={}",
-                                j, q.getText(), q.getOption1(), q.getOption2(), q.getCorrectOptionIndex());
-                    }
-                }
-            }
-        }
 
         story.setId(id);
 
