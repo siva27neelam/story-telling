@@ -10,15 +10,12 @@
     <meta name="description" content="Learn about SleepyTales - a community-driven platform for creating and sharing engaging, educational stories for children.">
 
     <!-- Performance Head -->
-    <div th:replace="fragments/common :: performance-head"></div>
+    <div th:replace="~{fragments/common :: performance-head}"></div>
 </head>
 <body>
-<!-- Include Header -->
-<div th:replace="fragments/common :: header"></div>
-
-<!-- Include Sidebar -->
-<div th:replace="fragments/common :: sidebar"></div>
-<div th:replace="fragments/common :: sidebar-overlay"></div>
+<div th:replace="~{fragments/common :: header}"></div>
+<div th:replace="~{fragments/common :: sidebar}"></div>
+<div th:replace="~{fragments/common :: sidebar-overlay}"></div>
 
 <!-- Main Content -->
 <main class="container mt-5">
@@ -180,10 +177,7 @@
     </div>
 </main>
 
-<!-- Include Footer -->
-<div th:replace="fragments/common :: footer"></div>
-
-<!-- Essential Scripts -->
-<div th:replace="fragments/common :: essential-scripts"></div>
+<div th:replace="~{fragments/common :: footer}"></div>
+<div th:replace="~{fragments/common :: essential-scripts}"></div>
 </body>
 </html>
