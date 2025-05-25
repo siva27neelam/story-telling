@@ -92,3 +92,10 @@ End with the purpose of the illustration:
 
 docker pull jellyfin/jellyfin:latest
 
+
+docker run -d \
+  --name story-telling \
+  -p 8080:8080 \
+  -v /home/havi/app/logs:/app/logs \
+  -e LOGGING_FILE_PATH=/app/logs \
+  siva27neelam/story-telling:latest
